@@ -1,13 +1,8 @@
----
-name: hotspot-audit
-description: Use when asked to reduce merge conflicts between parallel agents, to modularize or restructure a codebase, or when an edit lands in a file that is both large and frequently changed. Measures churn from git history, identifies hub files, and splits them along concern seams as pure-move commits.
----
-
 # Hotspot audit
 
-Conflicts concentrate where churn concentrates. This skill finds the files
+Conflicts concentrate where churn concentrates. This file covers finding the files
 that attract every feature's edits and splits them so future work lands in
-separate files. It is the retroactive companion to `one-feature-one-file`,
+separate files. It is the retroactive companion to `one-feature-one-file.md`,
 which prevents new hotspots from forming.
 
 ## Measure
@@ -31,11 +26,11 @@ Not every hot file is a problem. Sort each candidate into one of three bins:
 - **Hot concern**: touched often because that area is under active
   development. The churn is real work, not structure. Leave it alone.
 - **Generated or lock file**: high churn is inherent. Splitting does not
-  apply; handle these with the `mergeable-edits` skill (regenerate, never
+  apply; handle these with `mergeable-edits.md` (regenerate, never
   hand-resolve).
 
 Docs (AGENTS.md, README, design docs) are usually the top hotspots of all and
-get their own treatment in the `doc-gardening` skill.
+get their own treatment in `doc-gardening.md`.
 
 ## Split
 

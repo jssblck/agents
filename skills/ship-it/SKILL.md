@@ -1,6 +1,6 @@
 ---
 name: ship-it
-description: Land a completed workstream by verifying it, committing it, opening a ready pull request, and driving every CI check to green. Use when the user says "ship it", "commit and open a PR", "get CI green", "push this and watch CI", or otherwise asks the agent to finish and publish the current change.
+description: Use when asked to "ship it", commit and open a PR, or get CI green. Verifies locally, commits, opens the PR, and loops on CI until every check passes.
 user-invocable: true
 ---
 
@@ -37,10 +37,6 @@ a toolchain.
   that need services or extra setup: those often skip silently when unconfigured,
   so a green run can be hollow. Make sure the relevant ones actually ran. A change
   that does not reach that layer may not need it.
-- **Follow the Bastion workflow when configured.** If the repository uses
-  Bastion, follow its `using-bastion` skill to decide whether the gate runs
-  locally or in CI. Fix blocking findings at their root, and never weaken the
-  reviewer registry to make the gate pass.
 
 When a fix breaks a test, do not just patch the one failure: scan for other call
 sites or fixtures that relied on the old behavior, so the next CI run does not
@@ -75,10 +71,7 @@ Rules that always hold:
 
 ## 3. Open the PR
 
-Infer the PR's core reason from the workstream and confirm it with the user unless
-the reason was already confirmed or the user explicitly asked the agent to proceed
-without confirmation. Then push the branch and inspect whether it already has an
-open PR:
+Push the branch and check whether it already has an open PR:
 
 ```sh
 gh pr list --state open --head <branch> --json number,title,url,isDraft,baseRefName,headRefName
@@ -128,13 +121,11 @@ Notes:
 ## 4. Get CI green
 
 CI is not green until **every** check passes: the build (across whatever matrix it
-runs), the test job, the formatter and linter checks, and Bastion when configured.
+runs), the test job, and the formatter and linter checks.
 
-Prefer `gh pr checks <n> --watch --interval 20` (it blocks until the run resolves)
-or run that watch in the background and act on its completion notification. This
-harness blocks a `sleep N && <cmd>` chain, so do not string sleeps together to
-wait; use the watch or a real background wait. Watch the complete check set so a
-filtered view cannot hide a failure. When a check fails, start with the complete
+Wait with `gh pr checks <n> --watch --interval 20` (it blocks until the run
+resolves), in the foreground or as a background job. Watch the complete check set
+so a filtered view cannot hide a failure. When a check fails, start with the complete
 failed-job log, then search within it as needed:
 
 ```sh
@@ -144,8 +135,7 @@ gh run view <run-id> --log-failed
 Then loop: **diagnose the failure, fix it, re-run the local gates from step 1,
 commit the fix, push, and re-poll.** A first red run is normal and useful (it
 catches hidden dependencies like a fixture that relied on old behavior); keep
-going until it is all green. Do not declare done on a partial pass. Fix a
-Bastion finding at its root, never by working around the gate.
+going until it is all green. Do not declare done on a partial pass.
 
 ## 5. Report
 

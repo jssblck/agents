@@ -1,14 +1,9 @@
----
-name: doc-gardening
-description: Use when writing or updating AGENTS.md, CLAUDE.md, README, or any project docs; when a change seems to "need documenting"; or when instruction files have grown stale, bloated, or conflict-prone. Covers what each doc layer is for, deleting restated or discoverable content, and sharding docs so parallel agents stop colliding in the same file.
----
-
 # Doc gardening
 
 In agent-managed repos, docs are the top merge-conflict hotspot: measured over
 real history, AGENTS.md and README beat every source file, because every
 change routes an edit through them. Most of that routed content should never
-have been written. This skill is about writing less, deleting more, and
+have been written. The rule is to write less, deleting more, and
 putting what remains where only the relevant changes touch it.
 
 ## What each layer is for

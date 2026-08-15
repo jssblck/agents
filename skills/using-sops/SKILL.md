@@ -1,11 +1,11 @@
 ---
 name: using-sops
-description: Use when a repository keeps secrets as sops-encrypted dotenv files (a `.sops.yaml` and `secrets/<env>.env` exist, or `pnpm secrets` is a script). Covers how agents read and write dev secrets, request prod elevation, and start processes with secrets; and how a human sets up the age keys for a machine, a cloud sandbox, and production. Also use when the user asks to be reminded of the setup steps.
+description: Use when a repo has .sops.yaml and secrets/<env>.env, or a pnpm secrets script. Covers reading and writing dev secrets, prod elevation, running with secrets, and the human key setup.
 ---
 
 # Using sops
 
-Repositories built from `agentic-starter` commit their secrets to git as sops-encrypted
+Repositories that use this layout commit their secrets to git as sops-encrypted
 dotenv files, one per deployment environment: `secrets/dev.env`, `secrets/prod.env`. The
 files decrypt with age identities. There is no `.env`, no secrets service, and no session
 to log in to. Every checkout, worktree, and cloud sandbox has the encrypted files at
@@ -40,8 +40,7 @@ pnpm secrets exec dev -- node apps/worker/src/main.ts
 ```
 
 `exec` puts the decrypted values in the child's environment (over the shell's), removes
-`SOPS_AGE_KEY*` from it, forwards signals, and exits with the child's status. `.eph`
-`run=` lines already wrap through it; `eph run` composes with it.
+`SOPS_AGE_KEY*` from it, forwards signals, and exits with the child's status.
 
 Prod secrets need elevation. When a task requires reading or writing `prod.env`:
 
@@ -56,15 +55,14 @@ When you add a variable, add it to the env schema and to every `secrets/<env>.en
 decrypt. If you cannot decrypt prod, say so in the PR: the typed env check fails the prod
 boot until the value is set, which is the intended signal.
 
-Never write an `AGE-SECRET-KEY-…` into a tracked file, a log, or a commit; a Nudge rule
-blocks the write in starter-derived repos. Never put `personal` or `prod` in a cloud
+Never write an `AGE-SECRET-KEY-...` into a tracked file, a log, or a commit. Never put `personal` or `prod` in a cloud
 environment.
 
 ## Human setup
 
 For the one-time steps (generating keys, installing `sops` and `age`, wiring the `agent`
-key into Claude Code on the web, Codex, Cursor, and Daytona, configuring Railway or a
-systemd unit for prod, and rotating keys), read `references/setup.md`. When the user asks
+key into agent tools and cloud sandboxes, configuring the prod platform, and rotating
+keys), read `references/setup.md`. When the user asks
 to be reminded of the steps, walk them through that file in order.
 
 For the sops and age behavior the design relies on (identity union, `updatekeys`,

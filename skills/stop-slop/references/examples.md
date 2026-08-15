@@ -1,6 +1,6 @@
 # Before and after
 
-Real rewrites from this project's landing page. Each pairs a tell with a fix and
+Rewrites from a real product landing page. Each pairs a tell with a fix and
 shows what was dropped (rhetoric) and what was kept (every fact). Read these as
 the voice anchor: plain, specific, mechanism-forward.
 

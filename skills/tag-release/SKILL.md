@@ -1,6 +1,6 @@
 ---
 name: tag-release
-description: Cut a release by tagging the current remote default branch in the repository's established format, pushing it, and verifying the release pipeline and artifacts. Use when the user asks the agent to tag a patch, minor, or major release, cut a release, or publish a version from the default branch.
+description: Use when asked to tag or cut a patch, minor, or major release. Tags the remote default branch in the repo's convention, pushes, and watches the release to green.
 user-invocable: true
 ---
 
@@ -10,10 +10,9 @@ Tag the current `origin` default-branch HEAD in the repository's established
 version format and tag kind. Inspect the release convention, compute the next
 version, verify the exact target, push the tag, and watch the release to green.
 
-An explicit request to tag or cut a release authorizes creating and pushing the
-tag. It also authorizes the repository's established forge Release workflow.
-Proceed without a second confirmation. Ask a question only when a required
-value cannot be derived or the repository state makes the release ambiguous.
+The request authorizes creating and pushing the tag and running the repository's
+established release workflow. Ask only when a required value cannot be derived
+or the repository state makes the release ambiguous.
 
 ## 1. Sync to the origin default branch first
 
@@ -84,28 +83,23 @@ Record the computed tag, candidate commit SHA, tag kind, and release mechanism.
 
 ## 4. Create the tag, matching convention
 
-Fetch again immediately before creating the tag:
+Immediately before tagging, re-fetch and confirm nothing moved:
 
 ```sh
 git ls-remote --symref origin HEAD
 git fetch origin --tags --prune
 git rev-parse origin/<default-branch>
 git ls-remote --tags --refs origin 'refs/tags/<relevant-prefix>*'
-```
-
-Verify that the remote default branch is unchanged, the branch SHA still matches
-the candidate SHA, the latest relevant remote tag is unchanged, and the proposed
-tag does not already exist. If any of these checks changed, recompute the release,
-then repeat the validation and proceed when the requested release remains
-unambiguous. Re-query the required checks on the release SHA immediately before
-tagging or pushing, even when the SHA is unchanged. Stop if a required check is
-pending, failing, or no longer green. Then tag the fetched remote HEAD explicitly,
-matching the kind of the prior tags:
-
-```sh
 gh api 'repos/<owner>/<repository>/commits/<release-sha>/check-runs'
 gh api 'repos/<owner>/<repository>/commits/<release-sha>/status'
 ```
+
+The default branch, its SHA, and the latest relevant tag must be unchanged, the
+proposed tag must not exist, and required checks on the release SHA must be
+green. If anything moved, recompute the release and repeat this check. If a
+required check is pending or failing, stop.
+
+Then tag the fetched remote HEAD explicitly, matching the kind of the prior tags:
 
 ```sh
 # lightweight (prior tags are lightweight):
@@ -115,9 +109,9 @@ git tag <version> origin/<default-branch>
 git tag -a <version> origin/<default-branch> -m "<version>"
 ```
 
-Watch the signing gotcha: a global `tag.gpgsign = true` will silently turn even a
-lightweight or annotated tag into a signed one. If the repo's existing tags are
-unsigned, pass `--no-sign` so the new tag matches. If they are signed, sign it.
+A global `tag.gpgsign = true` silently turns even a lightweight or annotated tag
+into a signed one. If the repo's existing tags are unsigned, pass `--no-sign` so
+the new tag matches. If they are signed, sign it.
 
 ## 5. Push, then watch the release to green
 

@@ -88,18 +88,12 @@ Be specific about what is good, difficult, or worth doing. Encourage without gus
 
 - throat-clearing before the point;
 - generic praise at the start of a response;
-- corporate or consultant language;
-- ornamental metaphors;
+- corporate or consultant language and ornamental metaphors;
 - tidy recap paragraphs that repeat the conclusion;
 - fake balance between claims that do not have equal support;
-- excessive headings, bullet lists, or transition phrases;
-- uniform sentence length;
-- repeated exclamation marks or synthetic enthusiasm;
 - softened disagreement that obscures the actual correction;
 - feature inventories that never explain why the features matter;
-- defensive caveats that repeat a limitation already stated precisely;
-- isolated sentence pairs that manufacture emphasis instead of developing one thought;
-- abstract company language where a concrete account of the work would be clearer.
+- synthetic enthusiasm and repeated exclamation marks.
 
 ### Calibration
 
@@ -113,21 +107,3 @@ Treat these rules as tendencies rather than quotas. Audience and purpose outrank
 - Do not quote or reconstruct private source material. This skill intentionally contains no corpus examples.
 - Match the register. Use chat-native casing in casual conversation and conventional capitalization in professional or durable prose unless the user requests otherwise.
 - Keep disagreement precise. Correct the claim at issue without escalating to a broader judgment of the person.
-
-## Final voice check
-
-Before returning prose, confirm that:
-
-- the point appears early;
-- qualifications express real uncertainty rather than reflexive hedging;
-- empirical claims stay within the available evidence;
-- beliefs and recommendations are stated with their intended force;
-- material mechanisms include their practical consequence;
-- sentences sound conversational without becoming vague;
-- closely related sentences have not been split into artificial slogans;
-- emphasis is selective;
-- paragraph breaks follow changes in thought;
-- humor, bluntness, and irritation fit the situation;
-- caveats define a distinct boundary instead of functioning as generic insurance;
-- announcements and essays develop an argument rather than reciting features;
-- no generic AI summary or motivational closing was added.

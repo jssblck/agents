@@ -1,11 +1,6 @@
----
-name: mergeable-edits
-description: Use when editing a shared file that parallel agents also touch (dispatchers, routers, registries, config lists, changelogs, lockfiles, generated files) or when resolving a merge conflict in one. Edit discipline that lets concurrent changes auto-merge instead of colliding.
----
-
 # Mergeable edits
 
-Structure prevents most conflicts (see `one-feature-one-file`); this skill
+Structure prevents most conflicts (see `one-feature-one-file.md`); this file
 covers the shared files that legitimately remain: registration lines,
 registries, config lists, and the generated files no structure can remove.
 The goal is edits shaped so git's line-based merge resolves concurrent

@@ -1,8 +1,3 @@
----
-name: one-feature-one-file
-description: 'Use when adding new behavior to a codebase worked on by parallel agents: a subcommand, route, endpoint, handler, test scenario, page, or component. New behavior goes in its own file; shared hub files (dispatchers, routers, CLI trees, test mains, mod/index files) grow by exactly one line. Also use when deciding where a new function or handler should live.'
----
-
 # One feature, one file
 
 Merge conflicts among parallel agents are a structural property, not bad luck.
@@ -51,8 +46,8 @@ file, it is a hub.
 ## When the hub edit cannot be one line
 
 Some features genuinely change shared plumbing. Keep that edit minimal and
-mechanical, isolate it in its own commit, and follow the `mergeable-edits`
-skill for how to shape it so concurrent branches still merge.
+mechanical, isolate it in its own commit, and follow `mergeable-edits.md`
+for how to shape it so concurrent branches still merge.
 
 ## The counter-instinct
 

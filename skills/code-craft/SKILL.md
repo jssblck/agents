@@ -1,15 +1,8 @@
 ---
 name: code-craft
-description: Use when writing, reviewing, or refactoring code in any language for correctness, type-safety, and idiomatic style, or when scaffolding a new project. Covers making illegal states unrepresentable, parse-don't-validate boundaries, errors-as-values and fail-closed gates, newtypes over stringly-typed data, ownership and copy discipline, testing without mocks, architecture docs, avoiding premature abstraction, and new-project defaults (formatters, linters, an agent-rules layer, an agentic review gate, CLI release and community files). Routes language-agnostic principles to per-language dialects for Rust, TypeScript, Go, and Python.
+description: Use when writing, reviewing, or refactoring code, or scaffolding a new project. Language-agnostic principles (types encode invariants, parse don't validate, errors as values, no mocks, earn abstractions) with dialects for Rust, TypeScript, Go, and Python.
 user-invocable: true
 argument-hint: "[rust|typescript|go|python] [target]"
-license: MIT
-metadata:
-  version: "1.0.0"
-  sources:
-    - leonardomso/rust-skills (MIT)
-    - Matklad Rust100k series
-    - Alexis King, "Parse, don't validate" and "Names are not type safety"
 ---
 
 # Code Craft
@@ -32,13 +25,9 @@ the same everywhere; only the spelling changes.
 4. Run the project's own formatter, type-check, linter, and tests before
    claiming done. The language file names the concrete commands.
 
-This is progressive disclosure: SKILL.md is cheap and always applies, language
-and principle files load on demand.
-
 ## Universal core
 
-These eight principles carry most of the value. Each links to a deeper file and
-maps into every language file.
+Each principle links to a deeper file and maps into every language file.
 
 ### 1. Make illegal states unrepresentable
 
@@ -124,7 +113,7 @@ The picks and the full checklist are in
 
 ## Language router
 
-Detect the language, then read its file. Each maps the eight principles into the
+Detect the language, then read its file. Each maps the principles into the
 dialect and adds what is unique to that language (tooling, concurrency model,
 naming, project layout, idioms to reach for, anti-patterns to refuse).
 
@@ -145,20 +134,8 @@ repo's `AGENTS.md`/`CLAUDE.md` or its established patterns conflict with a
 principle here, follow the repo and say so. This skill is the default, not an
 override.
 
-## Principle index
+## Provenance
 
-- [`principles/illegal-states.md`](principles/illegal-states.md): encode
-  invariants in types, avoid relying on names, and use newtypes
-- [`principles/parse-dont-validate.md`](principles/parse-dont-validate.md):
-  parse boundaries into proof-carrying types
-- [`principles/errors-as-values.md`](principles/errors-as-values.md): use
-  explicit errors and context chains, and fail closed
-- [`principles/testing.md`](principles/testing.md): write behavior-first,
-  deterministic tests without mocks
-- [`principles/architecture-docs.md`](principles/architecture-docs.md): maintain
-  a short, stable architecture map
-- [`principles/simplicity.md`](principles/simplicity.md): require abstractions
-  to earn their cost, and profile before optimizing
-- [`principles/new-project-defaults.md`](principles/new-project-defaults.md):
-  configure formatters, linters, agent rules, review gates, CLI releases, and
-  community files
+Distilled from `leonardomso/rust-skills` (MIT), Matklad's Rust100k series, and
+Alexis King's "Parse, don't validate" and "Names are not type safety", then
+generalized beyond Rust.

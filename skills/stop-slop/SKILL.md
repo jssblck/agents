@@ -24,11 +24,6 @@ Avoid two failure modes:
 Write plain, specific, varied prose that explains concrete mechanisms. One
 brief expression of personality per section is fine.
 
-Use ASD-STE100 Simplified Technical English as the general clarity standard.
-Use consistent terms, active voice, focused paragraphs, and concise procedures.
-Do not enforce the controlled dictionary unless the user asks for strict
-ASD-STE100 compliance.
-
 ## The core test
 
 After an edit, ask whether every fact is still present. A shorter version that
@@ -88,7 +83,10 @@ the system and respects the reader's time.
 6. Read the result from start to finish. Restore variation if every sentence
    has the same rhythm.
 
-## Mechanics this project cares about
+## Mechanics
+
+Follow ASD-STE100 Simplified Technical English in spirit. Do not enforce its
+controlled dictionary unless the user asks for strict compliance.
 
 - Plain ASCII only. No em dashes, no en dashes, and no literal `--` used as a
   dash in prose. Recast with a comma, a colon, parentheses, or two sentences.
@@ -105,13 +103,4 @@ the system and respects the reader's time.
   kill-or-keep test and a rewrite.
 - `references/phrases.md`: the lexical tells (a lower-priority backstop; the
   structure matters more than the vocabulary).
-- `references/examples.md`: before and after rewrites drawn from this project.
-
-## Provenance
-
-The structural framing here draws on Hardik Pandya's `stop-slop` skill
-(`github.com/hardikpandya/stop-slop`, with a Codex fork at
-`github.com/pa4uslf/stop-slop-for-codex`) and on a project-specific deslop brief.
-For a deterministic CI backstop, Vale (`vale.sh`) with a `reject.txt` and custom
-regex rules catches the lexical tells that an agent can miss; it does not catch
-the structural ones, so the two are complementary.
+- `references/examples.md`: before and after rewrites from a real landing page.
