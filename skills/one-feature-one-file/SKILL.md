@@ -1,6 +1,6 @@
 ---
 name: one-feature-one-file
-description: Use when adding new behavior to a codebase worked on by parallel agents: a subcommand, route, endpoint, handler, test scenario, page, or component. New behavior goes in its own file; shared hub files (dispatchers, routers, CLI trees, test mains, mod/index files) grow by exactly one line. Also use when deciding where a new function or handler should live.
+description: 'Use when adding new behavior to a codebase worked on by parallel agents: a subcommand, route, endpoint, handler, test scenario, page, or component. New behavior goes in its own file; shared hub files (dispatchers, routers, CLI trees, test mains, mod/index files) grow by exactly one line. Also use when deciding where a new function or handler should live.'
 ---
 
 # One feature, one file
