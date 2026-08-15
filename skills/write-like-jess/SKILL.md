@@ -131,3 +131,4 @@ Before returning prose, confirm that:
 - caveats define a distinct boundary instead of functioning as generic insurance;
 - announcements and essays develop an argument rather than reciting features;
 - no generic AI summary or motivational closing was added.
+
