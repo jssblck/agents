@@ -9,6 +9,3 @@ Install into a project (writes `.agents/skills/`, links `.claude/skills/`, recor
 ```sh
 npx skills add jssblck/agents -a claude-code -a codex -y
 ```
-
-Restore from a committed lock: `npx skills experimental_install`. Update every
-installed skill to this repo's `main`: `npx skills update -y`.
