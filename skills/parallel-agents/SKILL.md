@@ -1,6 +1,6 @@
 ---
 name: parallel-agents
-description: Use when parallel agents share a codebase: adding new behavior, editing or resolving conflicts in shared files (dispatchers, registries, lockfiles), finding and splitting churn hotspots, or writing AGENTS.md, CLAUDE.md, or README.
+description: "Use when parallel agents share a codebase: adding new behavior, editing or resolving conflicts in shared files (dispatchers, registries, lockfiles), finding and splitting churn hotspots, or writing AGENTS.md, CLAUDE.md, or README."
 ---
 
 # Parallel agents
