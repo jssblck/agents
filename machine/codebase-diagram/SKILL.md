@@ -110,8 +110,8 @@ python3 <skill>/scripts/inject.py \
 python3 <skill>/scripts/scan.py /tmp/codebase-diagram/index.html
 ```
 
-`<skill>` is this skill's directory (`skills/codebase-diagram` in this repo,
-or the installed copy under `.agents/skills` / `.claude/skills`).
+`<skill>` is this skill's directory (`machine/codebase-diagram` in this
+repo, or the installed global copy).
 
 Open the HTML locally and click through: select a block, go inside, come
 back out, click a moving dot, flip the theme. Fix the model if a view is
@@ -157,9 +157,10 @@ to look like a place, not a graph library demo.
 - Dashed yards around groups
 - Moving dots on the edges; a click opens the snippet
 - Left index grouped the same way as the yards
-- Right panel: What it does / How it's built, plus how to read the view
+- Right panel: What it does / How it's built
 - Top stats, flow controls (resume, trace one step, reset)
-- Bottom legend: `+` inside, `-` out, arrows move, hover, drag, scroll
+- A help control for keys, pan, zoom, and inspect. Do not put a
+  how-to-use-the-page section in the diagram prose
 - Catppuccin Mocha when the browser prefers dark, Latte when it prefers
   light. The page follows `prefers-color-scheme` and also has a toggle
 

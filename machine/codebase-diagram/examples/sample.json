@@ -15,7 +15,7 @@
       "title": "The Workshop",
       "summary": "Lumen turns a folder of notes into a page you can hand someone. [[composer]] writes, [[library]] keeps the stack, [[scanner]] refuses secrets, and [[publisher]] puts the file on the press. [[theme]] paints mocha or latte. [[site]] is the only thing that leaves the room.",
       "howBuilt": "One HTML template plus a JSON model. The agent surveys a repo, fills the model, injects it, and runs a secret scan before anything is published. [[identity]] is optional: if a here.now key is already on the machine, the press uses it. No key means a 24h anonymous page.",
-      "howToRead": "Tall blocks measure or refuse. Short blocks store or emit. Hover a roof for its name. Click a moving dot to read the snippet on that wire. + goes inside a block that has rooms.",
+      "howToRead": "Tall blocks measure or refuse. Short blocks store or emit.",
       "groups": [
         { "id": "desk", "label": "The Desk", "x": 0, "y": 0, "w": 5, "d": 4 },
         { "id": "gate", "label": "The Gate", "x": 6, "y": 0, "w": 5, "d": 4 },

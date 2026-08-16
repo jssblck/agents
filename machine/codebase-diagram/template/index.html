@@ -145,7 +145,7 @@
     }
     body {
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto 1fr;
       min-height: 100%;
     }
     button {
@@ -264,27 +264,51 @@
       padding: 0 4px;
       cursor: pointer;
     }
-    #howto {
-      margin-top: 22px;
-      padding-top: 12px;
-      border-top: 1px solid var(--surface0);
-      color: var(--subtext0);
+    #help-wrap { position: relative; }
+    #btn-help {
+      width: 34px;
+      padding: 6px 0;
+      border-radius: 50%;
+      letter-spacing: 0;
+    }
+    #help {
+      display: none;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 8px);
+      width: 280px;
+      padding: 12px 14px;
+      background: var(--mantle);
+      border: 1px solid var(--surface1);
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--crust) 40%, transparent);
+      z-index: 4;
+      color: var(--subtext1);
       font-size: 12px;
+      text-transform: none;
+      letter-spacing: 0;
     }
-
-    #legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 18px;
-      padding: 8px 16px;
-      border-top: 1px solid var(--surface0);
-      background: var(--panel);
-      color: var(--subtext0);
-      font-size: 11px;
-      letter-spacing: 0.06em;
+    #help[data-open="true"] { display: block; }
+    #help h3 {
+      margin: 0 0 8px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
+      color: var(--overlay1);
     }
-    #legend b { color: var(--text); }
+    #help dl {
+      margin: 0;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 6px 12px;
+    }
+    #help dt { color: var(--text); font-weight: 600; }
+    #help dd { margin: 0; }
+    #help .note {
+      margin: 10px 0 0;
+      padding-top: 10px;
+      border-top: 1px solid var(--surface0);
+      color: var(--subtext0);
+    }
 
     #error {
       display: none;
@@ -310,6 +334,22 @@
       <button type="button" id="btn-step">Trace one step</button>
       <button type="button" id="btn-reset">Reset view</button>
       <button type="button" id="btn-theme" aria-label="Toggle theme">Theme</button>
+      <div id="help-wrap">
+        <button type="button" id="btn-help" aria-label="Help" aria-expanded="false" aria-controls="help">?</button>
+        <div id="help" role="dialog" aria-label="How to use this page">
+          <h3>Controls</h3>
+          <dl>
+            <dt>+</dt><dd>go inside a block</dd>
+            <dt>-</dt><dd>come back out</dd>
+            <dt>↑↓←→</dt><dd>move selection</dd>
+            <dt>hover</dt><dd>read a name</dd>
+            <dt>drag</dt><dd>pan</dd>
+            <dt>scroll</dt><dd>zoom</dd>
+            <dt>dot</dt><dd>inspect a snippet</dd>
+          </dl>
+          <div id="help-note" class="note" hidden></div>
+        </div>
+      </div>
     </div>
   </header>
   <div id="error"></div>
@@ -328,18 +368,8 @@
         <button type="button" id="tab-built" aria-pressed="false">How it's built</button>
       </div>
       <div id="prose" class="prose"></div>
-      <div id="howto"></div>
     </aside>
   </div>
-  <footer id="legend">
-    <span><b>+</b> go inside</span>
-    <span><b>-</b> come back out</span>
-    <span><b>↑↓←→</b> move</span>
-    <span><b>hover</b> to read</span>
-    <span><b>drag</b> to pan</span>
-    <span><b>scroll</b> to zoom</span>
-    <span><b>click a dot</b> to inspect</span>
-  </footer>
   <script type="application/json" id="diagram-model">
 {
   "title": "The Lumen Workshop",
@@ -370,7 +400,7 @@
       "title": "The Workshop",
       "summary": "Lumen turns a folder of notes into a page you can hand someone. [[composer]] writes, [[library]] keeps the stack, [[scanner]] refuses secrets, and [[publisher]] puts the file on the press. [[theme]] paints mocha or latte. [[site]] is the only thing that leaves the room.",
       "howBuilt": "One HTML template plus a JSON model. The agent surveys a repo, fills the model, injects it, and runs a secret scan before anything is published. [[identity]] is optional: if a here.now key is already on the machine, the press uses it. No key means a 24h anonymous page.",
-      "howToRead": "Tall blocks measure or refuse. Short blocks store or emit. Hover a roof for its name. Click a moving dot to read the snippet on that wire. + goes inside a block that has rooms.",
+      "howToRead": "Tall blocks measure or refuse. Short blocks store or emit.",
       "groups": [
         {
           "id": "desk",
@@ -1336,9 +1366,14 @@
         document.getElementById("prose").innerHTML = markProse(
           state.tab === "does" ? subject.summary : subject.howBuilt
         );
-        document.getElementById("howto").innerHTML = current.howToRead
-          ? `<div class="section">How to read it</div>${markProse(current.howToRead)}`
-          : "";
+        const helpNote = document.getElementById("help-note");
+        if (current.howToRead) {
+          helpNote.hidden = false;
+          helpNote.innerHTML = markProse(current.howToRead);
+        } else {
+          helpNote.hidden = true;
+          helpNote.textContent = "";
+        }
         document.getElementById("crumbs").innerHTML = crumbs().map((item, i, all) => {
           const here = i === all.length - 1;
           return `<button type="button" class="crumb" data-view="${item.id}" data-here="${here}">${item.title}</button>${here ? "" : " / "}`;
@@ -1539,6 +1574,22 @@
         renderChrome();
       });
 
+      function setHelpOpen(open) {
+        const panel = document.getElementById("help");
+        const button = document.getElementById("btn-help");
+        panel.setAttribute("data-open", String(open));
+        button.setAttribute("aria-expanded", String(open));
+      }
+
+      document.getElementById("btn-help").addEventListener("click", (event) => {
+        event.stopPropagation();
+        const open = document.getElementById("help").getAttribute("data-open") === "true";
+        setHelpOpen(!open);
+      });
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest("#help-wrap")) setHelpOpen(false);
+      });
+
       window.addEventListener("keydown", (event) => {
         if (event.target !== document.body && event.target !== canvas && event.target !== document.documentElement) {
           if (event.target.tagName === "BUTTON") {
@@ -1556,6 +1607,11 @@
         if (event.key === "Escape") {
           inspect.hidden = true;
           inspect.style.display = "none";
+          setHelpOpen(false);
+        }
+        if (event.key === "?") {
+          const open = document.getElementById("help").getAttribute("data-open") === "true";
+          setHelpOpen(!open);
         }
       });
 

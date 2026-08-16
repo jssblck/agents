@@ -27,7 +27,7 @@ not its story.
 | `parent` | string | no | View id to return to. Required on every view except the start view |
 | `summary` | string | yes | What this view does. Use `[[nodeId]]` to highlight a block |
 | `howBuilt` | string | yes | How it is built: modules, types, invariants |
-| `howToRead` | string | no | One or two sentences on how to read *this* view |
+| `howToRead` | string | no | Optional view note. Shown only inside the help popover, never as page chrome |
 | `groups` | array | yes | Dashed yards. May be empty on a tight close-up |
 | `nodes` | array | yes | 3 to 14 blocks. Never zero |
 | `edges` | array | yes | Flows between nodes in this view |
@@ -81,8 +81,9 @@ frame it.
 
 ## Prose marks
 
-`[[nodeId]]` in `summary`, `howBuilt`, or `howToRead` becomes a highlight
-chip. Clicking it selects that block. The id must exist in the same view.
+`[[nodeId]]` in `summary` or `howBuilt` becomes a highlight chip. Clicking
+it selects that block. The id must exist in the same view. `howToRead` is
+plain text inside the help popover only.
 
 Use blank lines to split paragraphs. The renderer does not run Markdown.
 
