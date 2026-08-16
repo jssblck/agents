@@ -5,43 +5,82 @@ overriding rule: let the type system do work, and keep `any` out.
 
 ## Tooling baseline
 
-Default to Biome (Rust-based, one tool for format + lint + import sorting), not
-Prettier + ESLint:
+Default to the oxc toolchain: `oxfmt` for formatting and `oxlint` for linting,
+not Prettier + ESLint and not Biome:
 
 ```sh
-biome check .         # format + lint + organize-imports in one pass
-                      # biome check --write  applies fixes; biome ci  runs in CI
-tsc --noEmit          # type-check (Biome does not type-check; CI must run this)
+oxfmt --check .            # format check (oxfmt --write . applies)
+oxlint --type-aware .      # lint, including type-aware rules
+tsc --noEmit               # type-check (oxlint does not replace tsc; CI must run this)
 ```
 
-One config, `biome.json`, committed to the repo. Do not also run Prettier or
-ESLint. Biome's type-aware lint rules are arriving, but `tsc --noEmit` is still
-the type-check of record. See
+One `.oxlintrc.json`, committed. `--type-aware` needs `oxlint-tsgolint` and a
+`tsconfig.json`; it turns on `no-floating-promises`, `no-misused-promises`, and
+`switch-exhaustiveness-check`. See
 [`../principles/new-project-defaults.md`](../principles/new-project-defaults.md).
 
 ### Ban the type-system escape hatches (default)
 
 Turn `any` into an error, and while you are there ban the other ways code lies to
-the checker. This is the default for new TS projects:
+the checker. This is the default for new TS projects. Vendor
+[anti-slop](https://github.com/dmmulroy/anti-slop) (`npx skills add
+dmmulroy/anti-slop --skill install-anti-slop`, then ask the agent to install it)
+and enable every rule:
 
 ```jsonc
-// biome.json
+// .oxlintrc.json
 {
-  "linter": {
-    "rules": {
-      "recommended": true,
-      "suspicious": { "noExplicitAny": "error" },
-      "style": { "noNonNullAssertion": "error", "useConst": "error" }
-    }
-  },
-  "plugins": ["./node_modules/biome-plugin-no-type-assertion/no-type-assertion.grit"]
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "ignorePatterns": ["tools/oxlint/anti-slop/**", ".agents/**", ".claude/**", ".codex/**"],
+  "jsPlugins": [{ "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }],
+  "categories": { "correctness": "error" },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-non-null-assertion": "error",
+    "typescript/no-floating-promises": "error",
+    "typescript/no-misused-promises": "error",
+    "typescript/switch-exhaustiveness-check": "error",
+    "eqeqeq": "error",
+    "no-empty": "error",
+    "prefer-const": "error",
+    "anti-slop/no-chained-type-assertions": "error",
+    "anti-slop/no-conditional-empty-object-spread": "error",
+    "anti-slop/no-known-value-widening": "error",
+    "anti-slop/no-module-mocking": "error",
+    "anti-slop/no-object-parameters": "error",
+    "anti-slop/no-reflect-apply": "error",
+    "anti-slop/no-reflect-get": "error",
+    "anti-slop/no-runtime-typeof": "error",
+    "anti-slop/no-shape-in-symbol-names": "error",
+    "anti-slop/no-unknown-parameters": "error",
+    "anti-slop/no-unknown-returns": "error",
+    "anti-slop/no-unknown-type-aliases": "error",
+    "anti-slop/no-unsafe-dictionary-type": "error",
+    "anti-slop/no-widen-then-assert": "error",
+    "anti-slop/require-safety-comment-for-type-assertion": "error"
+  }
 }
 ```
 
-`noExplicitAny` bans `any` (use `unknown` + narrowing), `noNonNullAssertion` bans
-`!` (handle the null), and the `biome-plugin-no-type-assertion` GritQL plugin
-bans `as` casts (parse, do not assert). Together they stop the three standard
-ways of disabling the type system locally.
+The plugin is TypeScript ESM, so `package.json` needs `"type": "module"` and
+`@oxlint/plugins` must be installed at the same version as `oxlint`.
+
+What each layer stops:
+
+- `no-explicit-any` bans `any`; `no-non-null-assertion` bans `!` (handle the
+  null); `no-floating-promises` bans dropped rejections.
+- `require-safety-comment-for-type-assertion` allows `as` only behind a
+  `// SAFETY:` line that names the checked invariant, and `no-chained-type-assertions`
+  and `no-widen-then-assert` close the `as unknown as T` and widen-then-cast
+  laundering routes. Parse, do not assert.
+- `no-unknown-parameters`, `no-unknown-returns`, `no-object-parameters`, and
+  `no-unsafe-dictionary-type` keep `unknown`, `object`, and `Record<string, unknown>`
+  out of function contracts; parse at the boundary and pass named types inward.
+- `no-runtime-typeof` rejects ad hoc `typeof` narrowing in favor of schema
+  parsing (set `allowInTypeGuards: true` in a schema-free project).
+- `no-known-value-widening` rejects `const h: Record<string, X> = {...}` when
+  inference or `satisfies` would keep the known keys.
+- `no-module-mocking` bans `vi.mock` / `jest.mock` (see Testing below).
 
 `tsconfig.json` non-negotiables:
 
@@ -79,13 +118,18 @@ into compile errors.
 - **Branded (nominal) types** for newtypes, since TS is structural:
   ```ts
   type UserId = string & { readonly __brand: "UserId" };
-  const UserId = (raw: string): UserId => { /* validate */ return raw as UserId; };
+  const UserId = (raw: string): UserId => {
+    if (raw.length === 0) throw new Error("empty UserId");
+    // SAFETY: the check above is the whole UserId invariant.
+    return raw as UserId;
+  };
   ```
   Now a bare `string` will not pass where `UserId` is required. Brand IDs, units,
   and validated values.
 - `unknown`, never `any`. `any` disables the type checker locally and infectiously.
-  Take `unknown` at boundaries and narrow it. If you must escape, `as` with a
-  comment and a runtime check, not `any`.
+  Parse `unknown` at the boundary into a named type; do not let `unknown` into
+  function signatures. If you must escape, `as` with a `// SAFETY:` comment and
+  a runtime check, not `any`.
 - `readonly` and `as const` for immutability; `satisfies` to check a literal
   against a type without widening it.
 - Prefer unions of string literals over `enum` (enums have surprising runtime
@@ -119,8 +163,8 @@ into compile errors.
     neverthrow's `Result`) when you want the error in the signature and
     exhaustive handling. Good for expected, branchy failure.
 - **Never swallow:** no empty `catch {}`, no unhandled promise. A floating
-  promise drops its rejection; `await` it or `.catch` it explicitly. Enable the
-  `no-floating-promises` lint.
+  promise drops its rejection; `await` it or `.catch` it explicitly. The
+  type-aware `no-floating-promises` and `no-misused-promises` rules gate this.
 - **Fail closed** in gates: a guard that throws or times out denies.
 - Async errors: `async`/`await` with `try/catch`, not raw `.then` chains. Use
   `Promise.all` for parallel, `Promise.allSettled` when you need every result
@@ -159,10 +203,10 @@ tooling. Keep the public API of a module explicit.
 
 - Vitest or Jest; `tsc --noEmit` is part of the test gate (a green test suite
   with type errors is not green).
-- Test behavior through the module's public surface. Avoid `jest.mock` of
-  internal modules and `vi.spyOn` on your own functions; that pins
-  implementation. Use real implementations, a real in-memory store, MSW for HTTP
-  boundaries, real temp dirs.
+- Test behavior through the module's public surface. `vi.mock` / `jest.mock` are
+  lint errors (`anti-slop/no-module-mocking`); avoid `vi.spyOn` on your own
+  functions too. Both pin implementation. Use real implementations, a real
+  in-memory store, MSW for HTTP boundaries, real temp dirs.
 - `fast-check` for property-based tests. Deterministic: fake timers
   (`vi.useFakeTimers`) instead of real `setTimeout` waits; inject the clock and
   RNG.
@@ -174,5 +218,5 @@ tooling. Keep the public API of a module explicit.
 handling the null; `as` casts that lie about runtime shape; `enum` by reflex;
 floating promises; empty `catch`; `JSON.parse` result used untyped; boolean-flag
 soup instead of a discriminated union; default exports everywhere; mocking your
-own modules; `==` (use `===`). The Biome config above makes the `any` / `!` /
-`as` ones hard errors rather than review nits.
+own modules; `==` (use `===`). The oxlint + anti-slop config above makes every
+one of these a hard error rather than a review nit.
