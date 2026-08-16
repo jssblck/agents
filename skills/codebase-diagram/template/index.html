@@ -846,6 +846,7 @@
         viewId: model.startView,
         selected: null,
         hover: null,
+        hoverPacket: null,
         tab: "does",
         playing: true,
         time: 0,
@@ -1081,7 +1082,7 @@
         view().edges.forEach((edge, edgeIndex) => {
           const path = edgePath(edge);
           edge.packets.forEach((packet, packetIndex) => {
-            const speed = 0.08 + (packetIndex * 0.015);
+            const speed = 0.045 + (packetIndex * 0.01);
             const phase = (edgeIndex * 0.17) + (packetIndex * 0.31);
             const t = state.time * speed + phase;
             items.push({
@@ -1224,11 +1225,14 @@
         ctx.scale(state.scale, state.scale);
         particles().forEach((item) => {
           const color = token(`--${item.packet.accent || "rosewater"}`);
+          const active = state.hoverPacket
+            && state.hoverPacket.packet === item.packet
+            && state.hoverPacket.edge === item.edge;
           ctx.beginPath();
           ctx.fillStyle = color;
           ctx.strokeStyle = token("--crust");
-          ctx.lineWidth = 1;
-          ctx.arc(item.world.x, item.world.y, 5, 0, Math.PI * 2);
+          ctx.lineWidth = active ? 2 : 1.2;
+          ctx.arc(item.world.x, item.world.y, active ? 8 : 6.5, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
         });
@@ -1254,7 +1258,7 @@
       function hitPacket(sx, sy) {
         const world = screenToWorld(sx, sy);
         let best = null;
-        let bestDist = 10 / state.scale;
+        let bestDist = 22 / state.scale;
         particles().forEach((item) => {
           const dist = Math.hypot(item.world.x - world.x, item.world.y - world.y);
           if (dist < bestDist) {
@@ -1435,9 +1439,17 @@
           state.lastY = event.clientY;
           return;
         }
-        const node = hitNode(local.x, local.y);
+        const packet = hitPacket(local.x, local.y);
+        state.hoverPacket = packet;
+        const node = packet ? null : hitNode(local.x, local.y);
         state.hover = node ? node.id : null;
-        if (node) {
+        canvas.style.cursor = packet || node ? "pointer" : "";
+        if (packet) {
+          tooltip.style.display = "block";
+          tooltip.textContent = packet.packet.label;
+          tooltip.style.left = `${local.x + 14}px`;
+          tooltip.style.top = `${local.y + 14}px`;
+        } else if (node) {
           tooltip.style.display = "block";
           tooltip.textContent = node.inside ? `${node.label}  (+ inside)` : node.label;
           tooltip.style.left = `${local.x + 14}px`;
@@ -1556,7 +1568,7 @@
       function frame(now) {
         const dt = Math.min(0.05, (now - last) / 1000);
         last = now;
-        if (state.playing) state.time += dt;
+        if (state.playing && !state.hoverPacket && !state.inspect) state.time += dt;
         draw();
         requestAnimationFrame(frame);
       }
