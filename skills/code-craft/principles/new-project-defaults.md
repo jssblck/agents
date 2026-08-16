@@ -27,21 +27,23 @@ with warnings-as-errors in CI, and do not let everyone bring their own.
 |---|---|---|---|
 | Rust | `rustfmt` (`cargo fmt`) | `clippy` (`-D warnings`) | `cargo build` / `cargo test` |
 | Go | `gofmt` / `goimports` | `staticcheck` (or `golangci-lint`) + `go vet` | `go build`, `go test -race` |
-| TypeScript | `biome` | `biome` | `tsc --noEmit` |
+| TypeScript | `oxfmt` | `oxlint --type-aware` (+ anti-slop) | `tsc --noEmit` |
 | Python | `ruff format` | `ruff check` | `mypy --strict` (or `pyright`) |
 
 Notes:
 
 - **Rust and Go** ship their formatter in the toolchain. `rustfmt` and `gofmt`
   are the whole point: opinionated, no config, just do what they say.
-- **TypeScript: `biome`** (Rust-based, one tool for format + lint + import
-  sorting). `biome check .` does it all in one pass, `biome check --write` fixes,
-  `biome ci` runs in CI. One `biome.json`, committed. `tsc --noEmit` still runs
-  separately for type-checking (Biome does not type-check yet). Do not also run
-  Prettier or ESLint. **Ban the type-system escape hatches by default:**
-  `noExplicitAny: error` (no `any`), `noNonNullAssertion: error` (no `!`), and the
-  `biome-plugin-no-type-assertion` GritQL plugin (no `as` casts). See
-  [`../languages/typescript.md`](../languages/typescript.md) for the config block.
+- **TypeScript: `oxfmt` + `oxlint`** (the oxc toolchain, Rust-based). `oxfmt
+  --check .` formats, `oxlint --type-aware .` lints, one `.oxlintrc.json`,
+  committed. `tsc --noEmit` still runs separately for type-checking. Do not also
+  run Prettier, ESLint, or Biome. **Ban the type-system escape hatches by
+  default:** `no-explicit-any` (no `any`), `no-non-null-assertion` (no `!`),
+  `no-floating-promises`, and the vendored
+  [anti-slop](https://github.com/dmmulroy/anti-slop) plugin (`as` needs a
+  `// SAFETY:` comment; no `unknown` in signatures; no `typeof` narrowing; no
+  module mocks). See [`../languages/typescript.md`](../languages/typescript.md)
+  for the config block.
 - **Python: `ruff` for both** format and lint (it replaces black, isort, flake8,
   pyupgrade, and more). One fast tool, one config block in `pyproject.toml`.
   Pair it with a strict type checker (`mypy --strict` or `pyright`) in CI.
@@ -64,8 +66,8 @@ invoke it, so they can never drift.
    ```sh
    # justfile
    check:
-       cargo fmt --check        # or: biome ci . (format+lint) / ruff format --check . / gofmt -l .
-       cargo clippy -- -D warnings   # or: ruff check . / staticcheck ./...  (TS: covered by biome above)
+       cargo fmt --check        # or: oxfmt --check . / ruff format --check . / gofmt -l .
+       cargo clippy -- -D warnings   # or: oxlint --type-aware . / ruff check . / staticcheck ./...
        cargo test               # or: tsc --noEmit && vitest / mypy --strict && pytest / go test -race ./...
        # plus the agent-rules whole-tree check, if you run one
    ```
@@ -126,7 +128,7 @@ that can express it faithfully* rather than duplicating it.
 - A real **linter or compiler is the enforcer of record wherever it has the
   rule.** It runs for everyone (editor, pre-commit, and the CI merge gate)
   regardless of who or what wrote the code, it is the authoritative gate that
-  blocks merge, and it usually autofixes. Banning `any`/`!`/`as` (Biome), ignored
+  blocks merge, and it usually autofixes. Banning `any`/`!`/`as` (oxlint + anti-slop), ignored
   errors (Go `errcheck`), bare `except:` (ruff `E722`), `.unwrap()` in prod (a
   clippy lint), and `validate* -> Result<()>` (clippy `unnecessary_wraps`) all
   belong here. If a lint rule exists, turn it on and let it be the gate.
