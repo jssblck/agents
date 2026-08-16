@@ -1,0 +1,375 @@
+{
+  "title": "The Lumen Workshop",
+  "repo": "lumen",
+  "subtitle": "notes to a page",
+  "stats": [
+    { "label": "Desks", "value": "3" },
+    { "label": "Gates", "value": "1" },
+    { "label": "Presses", "value": "2" },
+    { "label": "Themes", "value": "2" }
+  ],
+  "startView": "workshop",
+  "views": {
+    "workshop": {
+      "id": "workshop",
+      "title": "The Workshop",
+      "summary": "Lumen turns a folder of notes into a page you can hand someone. [[composer]] writes, [[library]] keeps the stack, [[scanner]] refuses secrets, and [[publisher]] puts the file on the press. [[theme]] paints mocha or latte. [[site]] is the only thing that leaves the room.",
+      "howBuilt": "One HTML template plus a JSON model. The agent surveys a repo, fills the model, injects it, and runs a secret scan before anything is published. [[identity]] is optional: if a here.now key is already on the machine, the press uses it. No key means a 24h anonymous page.",
+      "howToRead": "Tall blocks measure or refuse. Short blocks store or emit. Hover a roof for its name. Click a moving dot to read the snippet on that wire. + goes inside a block that has rooms.",
+      "groups": [
+        { "id": "desk", "label": "The Desk", "x": 0, "y": 0, "w": 5, "d": 4 },
+        { "id": "gate", "label": "The Gate", "x": 6, "y": 0, "w": 5, "d": 4 },
+        { "id": "press", "label": "The Press", "x": 0, "y": 5, "w": 8, "d": 4 },
+        { "id": "out", "label": "What Goes Out", "x": 9, "y": 5, "w": 4, "d": 4 }
+      ],
+      "nodes": [
+        {
+          "id": "composer",
+          "code": "C",
+          "label": "Composer",
+          "group": "desk",
+          "x": 1,
+          "y": 1,
+          "w": 1,
+          "d": 1,
+          "height": 2,
+          "kind": "process",
+          "count": 1,
+          "summary": "Reads the repo map and writes the diagram model: groups, blocks, edges, and staged packets.",
+          "howBuilt": "An agent workflow, not a compiler. It prefers README and architecture docs, then entrypoints. It will not make a block per file."
+        },
+        {
+          "id": "library",
+          "code": "L",
+          "label": "Library",
+          "group": "desk",
+          "x": 3,
+          "y": 2,
+          "w": 1,
+          "d": 1,
+          "height": 1,
+          "kind": "store",
+          "count": 1,
+          "summary": "The working JSON model. Input to the injector, not a deliverable.",
+          "howBuilt": "A single object with views keyed by id. See references/model.md in the skill."
+        },
+        {
+          "id": "scanner",
+          "code": "S",
+          "label": "Scanner",
+          "group": "gate",
+          "x": 8,
+          "y": 1,
+          "w": 1,
+          "d": 1,
+          "height": 5,
+          "kind": "measure",
+          "count": 2,
+          "inside": "scanner",
+          "summary": "The measuring tower. Walks the model and the HTML for secret-shaped values and refuses to let them leave.",
+          "howBuilt": "scripts/scan.py. Prefixes, PEM blocks, and high-entropy assignments to secret-looking names. A hit is a stop, not a warning."
+        },
+        {
+          "id": "identity",
+          "code": "I",
+          "label": "Identity",
+          "group": "gate",
+          "x": 6,
+          "y": 2,
+          "w": 1,
+          "d": 1,
+          "height": 2,
+          "kind": "boundary",
+          "count": 1,
+          "summary": "Optional here.now credentials already on the machine. Never written into the page.",
+          "howBuilt": "Reads $HERENOW_API_KEY or ~/.herenow/credentials. If neither exists, publish stays anonymous. The value never enters the model."
+        },
+        {
+          "id": "publisher",
+          "code": "P",
+          "label": "Publisher",
+          "group": "press",
+          "x": 2,
+          "y": 6,
+          "w": 2,
+          "d": 1,
+          "height": 3,
+          "kind": "process",
+          "count": 1,
+          "inside": "publisher",
+          "summary": "Injects the model into the template and either writes a file or sends the folder to here.now.",
+          "howBuilt": "scripts/inject.py validates the model, then publish.sh uploads a directory whose root is index.html."
+        },
+        {
+          "id": "theme",
+          "code": "T",
+          "label": "Theme",
+          "group": "press",
+          "x": 5,
+          "y": 7,
+          "w": 1,
+          "d": 1,
+          "height": 2,
+          "kind": "engine",
+          "count": 2,
+          "summary": "Catppuccin Mocha when the browser prefers dark, Latte when it prefers light. A toggle can override.",
+          "howBuilt": "CSS variables on :root and [data-theme]. No webfonts, no CDN."
+        },
+        {
+          "id": "site",
+          "code": "O",
+          "label": "Site",
+          "group": "out",
+          "x": 10,
+          "y": 6,
+          "w": 2,
+          "d": 2,
+          "height": 1,
+          "kind": "output",
+          "count": 1,
+          "summary": "The only artifact that leaves: a self-contained page or a here.now URL.",
+          "howBuilt": "One HTML file. No network calls at runtime. The public URL is the only thing reported after publish."
+        }
+      ],
+      "edges": [
+        {
+          "from": "composer",
+          "to": "library",
+          "label": "model draft",
+          "packets": [
+            {
+              "label": "root view",
+              "detail": "{ title, startView, views.workshop }",
+              "accent": "blue"
+            }
+          ]
+        },
+        {
+          "from": "library",
+          "to": "scanner",
+          "label": "scan request",
+          "via": [{ "x": 5, "y": 2 }],
+          "packets": [
+            {
+              "label": "model blob",
+              "detail": "{ nodes, edges, packets[] }",
+              "accent": "yellow"
+            }
+          ]
+        },
+        {
+          "from": "scanner",
+          "to": "publisher",
+          "label": "clean model",
+          "via": [{ "x": 8, "y": 5 }],
+          "packets": [
+            {
+              "label": "scan result",
+              "detail": "{ status: \"clean\" }",
+              "accent": "green"
+            }
+          ]
+        },
+        {
+          "from": "identity",
+          "to": "publisher",
+          "label": "auth presence",
+          "via": [{ "x": 6, "y": 5 }],
+          "packets": [
+            {
+              "label": "mode",
+              "detail": "{ auth: \"authenticated\" | \"anonymous\" }",
+              "accent": "peach"
+            }
+          ]
+        },
+        {
+          "from": "theme",
+          "to": "publisher",
+          "label": "skin",
+          "packets": [
+            {
+              "label": "palette",
+              "detail": "{ mocha | latte, source: \"prefers-color-scheme\" }",
+              "accent": "mauve"
+            }
+          ]
+        },
+        {
+          "from": "publisher",
+          "to": "site",
+          "label": "page",
+          "packets": [
+            {
+              "label": "deliverable",
+              "detail": "{ kind: \"html\" | \"here.now\", pathOrUrl }",
+              "accent": "teal"
+            }
+          ]
+        }
+      ]
+    },
+    "scanner": {
+      "id": "scanner",
+      "title": "Scanner",
+      "parent": "workshop",
+      "summary": "Two checks, then a verdict. [[patterns]] catch known secret prefixes. [[assignments]] catch a secret-looking name bound to a long random value. [[verdict]] is the only output.",
+      "howBuilt": "A short Python walk over the model strings, then the same prefixes over the raw HTML. Placeholders such as redacted or <token> are allowed.",
+      "howToRead": "The tower is a pipeline. Dots moving down are candidate strings. A red packet means the file must be rewritten.",
+      "groups": [
+        { "id": "checks", "label": "Checks", "x": 1, "y": 1, "w": 8, "d": 3 },
+        { "id": "out", "label": "Verdict", "x": 3, "y": 5, "w": 4, "d": 3 }
+      ],
+      "nodes": [
+        {
+          "id": "patterns",
+          "code": "R",
+          "label": "Prefix rules",
+          "group": "checks",
+          "x": 2,
+          "y": 2,
+          "height": 2,
+          "kind": "measure",
+          "count": 12,
+          "summary": "Regular expressions for tokens, PEM blocks, and cloud key ids.",
+          "howBuilt": "PREFIX_PATTERNS in scripts/scan.py. Add a pattern when a new vendor prefix shows up. Do not add English words."
+        },
+        {
+          "id": "assignments",
+          "code": "A",
+          "label": "Assignments",
+          "group": "checks",
+          "x": 6,
+          "y": 2,
+          "height": 3,
+          "kind": "measure",
+          "count": 1,
+          "summary": "Finds password, token, or api_key bound to a long mixed-alphabet string.",
+          "howBuilt": "ASSIGNMENT plus an entropy heuristic. Obvious placeholders pass."
+        },
+        {
+          "id": "verdict",
+          "code": "V",
+          "label": "Verdict",
+          "group": "out",
+          "x": 4,
+          "y": 6,
+          "w": 2,
+          "d": 1,
+          "height": 1,
+          "kind": "output",
+          "count": 2,
+          "summary": "Exit 0 and the word clean, or exit 1 and a list of paths. No middle.",
+          "howBuilt": "The skill treats a failed scan as a hard stop. Redact the model and run the scan again."
+        }
+      ],
+      "edges": [
+        {
+          "from": "patterns",
+          "to": "verdict",
+          "label": "prefix hits",
+          "via": [{ "x": 2, "y": 6 }],
+          "packets": [
+            {
+              "label": "hit",
+              "detail": "{ path: \"model.views.workshop.edges[0].packets[0].detail\", kind: \"prefix\" }",
+              "accent": "red"
+            }
+          ]
+        },
+        {
+          "from": "assignments",
+          "to": "verdict",
+          "label": "assignment hits",
+          "via": [{ "x": 7, "y": 6 }],
+          "packets": [
+            {
+              "label": "clean",
+              "detail": "{ path: \"model.views.scanner.nodes[1].howBuilt\", kind: \"none\" }",
+              "accent": "green"
+            }
+          ]
+        }
+      ]
+    },
+    "publisher": {
+      "id": "publisher",
+      "title": "Publisher",
+      "parent": "workshop",
+      "summary": "[[inject]] writes the model into the template. [[upload]] talks to here.now when that is the destination. [[finalize]] is the moment the URL exists.",
+      "howBuilt": "inject.py is local and dependency-free. Upload and finalize are the here.now publish script. The page is not live until finalize returns.",
+      "howToRead": "Left to right is the file path. The last block is the only one the reader of the diagram should hear about.",
+      "groups": [
+        { "id": "local", "label": "On disk", "x": 0, "y": 1, "w": 4, "d": 4 },
+        { "id": "net", "label": "On the press", "x": 5, "y": 1, "w": 6, "d": 4 }
+      ],
+      "nodes": [
+        {
+          "id": "inject",
+          "code": "J",
+          "label": "Inject",
+          "group": "local",
+          "x": 1,
+          "y": 2,
+          "height": 2,
+          "kind": "process",
+          "count": 1,
+          "summary": "Validates required fields, parent and inside links, and unique codes, then splices the JSON into the template.",
+          "howBuilt": "scripts/inject.py. Fails closed on a missing view or a dangling edge."
+        },
+        {
+          "id": "upload",
+          "code": "U",
+          "label": "Upload",
+          "group": "net",
+          "x": 6,
+          "y": 2,
+          "height": 2,
+          "kind": "process",
+          "count": 1,
+          "summary": "Creates or updates a site and sends the HTML. Uses saved credentials when present.",
+          "howBuilt": "here.now publish.sh --client cursor. Never pass --api-key in chat."
+        },
+        {
+          "id": "finalize",
+          "code": "F",
+          "label": "Finalize",
+          "group": "net",
+          "x": 8,
+          "y": 3,
+          "height": 3,
+          "kind": "output",
+          "count": 1,
+          "summary": "The site is live. The only number that matters is the public URL.",
+          "howBuilt": "Report siteUrl. Mention permanent vs 24h from publish_result.auth_mode. Stop unless asked to do more."
+        }
+      ],
+      "edges": [
+        {
+          "from": "inject",
+          "to": "upload",
+          "label": "html file",
+          "packets": [
+            {
+              "label": "index.html",
+              "detail": "{ bytes, contains: \"#diagram-model\" }",
+              "accent": "blue"
+            }
+          ]
+        },
+        {
+          "from": "upload",
+          "to": "finalize",
+          "label": "stored objects",
+          "packets": [
+            {
+              "label": "finalize",
+              "detail": "{ slug, auth: \"authenticated\" | \"anonymous\" }",
+              "accent": "teal"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

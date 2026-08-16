@@ -1,0 +1,1575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Codebase diagram</title>
+  <style>
+    :root {
+      --rosewater: #dc8a78;
+      --flamingo: #dd7878;
+      --pink: #ea76cb;
+      --mauve: #8839ef;
+      --red: #d20f39;
+      --maroon: #e64553;
+      --peach: #fe640b;
+      --yellow: #df8e1e;
+      --green: #40a02b;
+      --teal: #179299;
+      --sky: #04a5e5;
+      --sapphire: #209fb5;
+      --blue: #1e66f5;
+      --lavender: #7287fd;
+      --text: #4c4f69;
+      --subtext1: #5c5f77;
+      --subtext0: #6c6f85;
+      --overlay2: #7c7f93;
+      --overlay1: #8c8fa1;
+      --overlay0: #9ca0b0;
+      --surface2: #acb0be;
+      --surface1: #bcc0cc;
+      --surface0: #ccd0da;
+      --base: #eff1f5;
+      --mantle: #e6e9ef;
+      --crust: #dce0e8;
+      --grid: #8c8fa1;
+      --stroke: #4c4f69;
+      --panel: rgba(239, 241, 245, 0.94);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --rosewater: #f5e0dc;
+        --flamingo: #f2cdcd;
+        --pink: #f5c2e7;
+        --mauve: #cba6f7;
+        --red: #f38ba8;
+        --maroon: #eba0ac;
+        --peach: #fab387;
+        --yellow: #f9e2af;
+        --green: #a6e3a1;
+        --teal: #94e2d5;
+        --sky: #89dceb;
+        --sapphire: #74c7ec;
+        --blue: #89b4fa;
+        --lavender: #b4befe;
+        --text: #cdd6f4;
+        --subtext1: #bac2de;
+        --subtext0: #a6adc8;
+        --overlay2: #9399b2;
+        --overlay1: #7f849c;
+        --overlay0: #6c7086;
+        --surface2: #585b70;
+        --surface1: #45475a;
+        --surface0: #313244;
+        --base: #1e1e2e;
+        --mantle: #181825;
+        --crust: #11111b;
+        --grid: #45475a;
+        --stroke: #cdd6f4;
+        --panel: rgba(24, 24, 37, 0.94);
+      }
+    }
+
+    html[data-theme="latte"] {
+      --rosewater: #dc8a78;
+      --flamingo: #dd7878;
+      --pink: #ea76cb;
+      --mauve: #8839ef;
+      --red: #d20f39;
+      --maroon: #e64553;
+      --peach: #fe640b;
+      --yellow: #df8e1e;
+      --green: #40a02b;
+      --teal: #179299;
+      --sky: #04a5e5;
+      --sapphire: #209fb5;
+      --blue: #1e66f5;
+      --lavender: #7287fd;
+      --text: #4c4f69;
+      --subtext1: #5c5f77;
+      --subtext0: #6c6f85;
+      --overlay2: #7c7f93;
+      --overlay1: #8c8fa1;
+      --overlay0: #9ca0b0;
+      --surface2: #acb0be;
+      --surface1: #bcc0cc;
+      --surface0: #ccd0da;
+      --base: #eff1f5;
+      --mantle: #e6e9ef;
+      --crust: #dce0e8;
+      --grid: #8c8fa1;
+      --stroke: #4c4f69;
+      --panel: rgba(239, 241, 245, 0.94);
+    }
+
+    html[data-theme="mocha"] {
+      --rosewater: #f5e0dc;
+      --flamingo: #f2cdcd;
+      --pink: #f5c2e7;
+      --mauve: #cba6f7;
+      --red: #f38ba8;
+      --maroon: #eba0ac;
+      --peach: #fab387;
+      --yellow: #f9e2af;
+      --green: #a6e3a1;
+      --teal: #94e2d5;
+      --sky: #89dceb;
+      --sapphire: #74c7ec;
+      --blue: #89b4fa;
+      --lavender: #b4befe;
+      --text: #cdd6f4;
+      --subtext1: #bac2de;
+      --subtext0: #a6adc8;
+      --overlay2: #9399b2;
+      --overlay1: #7f849c;
+      --overlay0: #6c7086;
+      --surface2: #585b70;
+      --surface1: #45475a;
+      --surface0: #313244;
+      --base: #1e1e2e;
+      --mantle: #181825;
+      --crust: #11111b;
+      --grid: #45475a;
+      --stroke: #cdd6f4;
+      --panel: rgba(24, 24, 37, 0.94);
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--base);
+      color: var(--text);
+      font: 13px/1.45 "IBM Plex Mono", "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+    }
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-height: 100%;
+    }
+    button {
+      font: inherit;
+      color: inherit;
+      background: var(--mantle);
+      border: 1px solid var(--surface1);
+      padding: 6px 10px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+    button:hover, button[aria-pressed="true"] {
+      border-color: var(--overlay1);
+      background: var(--surface0);
+    }
+    button:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    #top {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--surface0);
+      background: var(--panel);
+      z-index: 2;
+    }
+    #brand { display: flex; flex-direction: column; gap: 2px; min-width: 220px; }
+    #title { font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; }
+    #repo { color: var(--subtext0); font-size: 11px; }
+    #stats { display: flex; flex-wrap: wrap; gap: 16px; flex: 1; }
+    .stat { color: var(--subtext1); }
+    .stat b { color: var(--text); font-weight: 600; }
+    #actions { display: flex; gap: 8px; align-items: center; }
+
+    #stage {
+      display: grid;
+      grid-template-columns: 260px 1fr 340px;
+      min-height: 0;
+    }
+    #index, #panel {
+      background: var(--panel);
+      border-color: var(--surface0);
+      overflow: auto;
+      padding: 14px 16px 24px;
+    }
+    #index { border-right: 1px solid var(--surface0); }
+    #panel { border-left: 1px solid var(--surface0); }
+    .section {
+      margin: 16px 0 8px;
+      color: var(--overlay1);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 10px;
+    }
+    .nav-item {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+      text-transform: none;
+      letter-spacing: 0;
+      border: 0;
+      background: transparent;
+      padding: 5px 6px;
+    }
+    .nav-item[aria-current="true"] { background: var(--surface0); }
+    .nav-item .code { color: var(--overlay1); }
+    .nav-item .count { color: var(--overlay0); }
+    .crumb {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--subtext0);
+    }
+    .crumb[data-here="true"] { color: var(--text); }
+
+    #canvas-wrap { position: relative; min-width: 0; min-height: 0; background: var(--base); }
+    canvas { display: block; width: 100%; height: 100%; cursor: grab; }
+    canvas.dragging { cursor: grabbing; }
+    #tooltip, #inspect {
+      position: absolute;
+      pointer-events: none;
+      background: var(--mantle);
+      border: 1px solid var(--surface1);
+      color: var(--text);
+      padding: 6px 8px;
+      max-width: 280px;
+      box-shadow: 0 8px 24px color-mix(in srgb, var(--crust) 40%, transparent);
+    }
+    #tooltip { display: none; font-size: 12px; }
+    #inspect { display: none; pointer-events: auto; z-index: 3; }
+    #inspect .k { color: var(--overlay1); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+    #inspect pre {
+      margin: 8px 0 0;
+      white-space: pre-wrap;
+      color: var(--subtext1);
+    }
+
+    #panel h2 {
+      margin: 0 0 10px;
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    #tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+    #tabs button { flex: 1; }
+    .prose p { margin: 0 0 10px; color: var(--subtext1); }
+    .chip {
+      display: inline;
+      background: var(--surface0);
+      color: var(--text);
+      padding: 0 4px;
+      cursor: pointer;
+    }
+    #howto {
+      margin-top: 22px;
+      padding-top: 12px;
+      border-top: 1px solid var(--surface0);
+      color: var(--subtext0);
+      font-size: 12px;
+    }
+
+    #legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      padding: 8px 16px;
+      border-top: 1px solid var(--surface0);
+      background: var(--panel);
+      color: var(--subtext0);
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    #legend b { color: var(--text); }
+
+    #error {
+      display: none;
+      padding: 24px;
+      color: var(--red);
+    }
+    @media (max-width: 980px) {
+      #stage { grid-template-columns: 1fr; grid-template-rows: 180px 1fr 240px; }
+      #index { border-right: 0; border-bottom: 1px solid var(--surface0); }
+      #panel { border-left: 0; border-top: 1px solid var(--surface0); }
+    }
+  </style>
+</head>
+<body>
+  <header id="top">
+    <div id="brand">
+      <div id="title">Codebase diagram</div>
+      <div id="repo"></div>
+    </div>
+    <div id="stats"></div>
+    <div id="actions">
+      <button type="button" id="btn-play" aria-pressed="true">Resume the flow</button>
+      <button type="button" id="btn-step">Trace one step</button>
+      <button type="button" id="btn-reset">Reset view</button>
+      <button type="button" id="btn-theme" aria-label="Toggle theme">Theme</button>
+    </div>
+  </header>
+  <div id="error"></div>
+  <div id="stage">
+    <aside id="index"></aside>
+    <div id="canvas-wrap">
+      <canvas id="map"></canvas>
+      <div id="tooltip"></div>
+      <div id="inspect" hidden></div>
+    </div>
+    <aside id="panel">
+      <div id="crumbs"></div>
+      <h2 id="panel-title"></h2>
+      <div id="tabs">
+        <button type="button" id="tab-does" aria-pressed="true">What it does</button>
+        <button type="button" id="tab-built" aria-pressed="false">How it's built</button>
+      </div>
+      <div id="prose" class="prose"></div>
+      <div id="howto"></div>
+    </aside>
+  </div>
+  <footer id="legend">
+    <span><b>+</b> go inside</span>
+    <span><b>-</b> come back out</span>
+    <span><b>↑↓←→</b> move</span>
+    <span><b>hover</b> to read</span>
+    <span><b>drag</b> to pan</span>
+    <span><b>scroll</b> to zoom</span>
+    <span><b>click a dot</b> to inspect</span>
+  </footer>
+  <script type="application/json" id="diagram-model">
+{
+  "title": "The Lumen Workshop",
+  "repo": "lumen",
+  "subtitle": "notes to a page",
+  "stats": [
+    {
+      "label": "Desks",
+      "value": "3"
+    },
+    {
+      "label": "Gates",
+      "value": "1"
+    },
+    {
+      "label": "Presses",
+      "value": "2"
+    },
+    {
+      "label": "Themes",
+      "value": "2"
+    }
+  ],
+  "startView": "workshop",
+  "views": {
+    "workshop": {
+      "id": "workshop",
+      "title": "The Workshop",
+      "summary": "Lumen turns a folder of notes into a page you can hand someone. [[composer]] writes, [[library]] keeps the stack, [[scanner]] refuses secrets, and [[publisher]] puts the file on the press. [[theme]] paints mocha or latte. [[site]] is the only thing that leaves the room.",
+      "howBuilt": "One HTML template plus a JSON model. The agent surveys a repo, fills the model, injects it, and runs a secret scan before anything is published. [[identity]] is optional: if a here.now key is already on the machine, the press uses it. No key means a 24h anonymous page.",
+      "howToRead": "Tall blocks measure or refuse. Short blocks store or emit. Hover a roof for its name. Click a moving dot to read the snippet on that wire. + goes inside a block that has rooms.",
+      "groups": [
+        {
+          "id": "desk",
+          "label": "The Desk",
+          "x": 0,
+          "y": 0,
+          "w": 5,
+          "d": 4
+        },
+        {
+          "id": "gate",
+          "label": "The Gate",
+          "x": 6,
+          "y": 0,
+          "w": 5,
+          "d": 4
+        },
+        {
+          "id": "press",
+          "label": "The Press",
+          "x": 0,
+          "y": 5,
+          "w": 8,
+          "d": 4
+        },
+        {
+          "id": "out",
+          "label": "What Goes Out",
+          "x": 9,
+          "y": 5,
+          "w": 4,
+          "d": 4
+        }
+      ],
+      "nodes": [
+        {
+          "id": "composer",
+          "code": "C",
+          "label": "Composer",
+          "group": "desk",
+          "x": 1,
+          "y": 1,
+          "w": 1,
+          "d": 1,
+          "height": 2,
+          "kind": "process",
+          "count": 1,
+          "summary": "Reads the repo map and writes the diagram model: groups, blocks, edges, and staged packets.",
+          "howBuilt": "An agent workflow, not a compiler. It prefers README and architecture docs, then entrypoints. It will not make a block per file."
+        },
+        {
+          "id": "library",
+          "code": "L",
+          "label": "Library",
+          "group": "desk",
+          "x": 3,
+          "y": 2,
+          "w": 1,
+          "d": 1,
+          "height": 1,
+          "kind": "store",
+          "count": 1,
+          "summary": "The working JSON model. Input to the injector, not a deliverable.",
+          "howBuilt": "A single object with views keyed by id. See references/model.md in the skill."
+        },
+        {
+          "id": "scanner",
+          "code": "S",
+          "label": "Scanner",
+          "group": "gate",
+          "x": 8,
+          "y": 1,
+          "w": 1,
+          "d": 1,
+          "height": 5,
+          "kind": "measure",
+          "count": 2,
+          "inside": "scanner",
+          "summary": "The measuring tower. Walks the model and the HTML for secret-shaped values and refuses to let them leave.",
+          "howBuilt": "scripts/scan.py. Prefixes, PEM blocks, and high-entropy assignments to secret-looking names. A hit is a stop, not a warning."
+        },
+        {
+          "id": "identity",
+          "code": "I",
+          "label": "Identity",
+          "group": "gate",
+          "x": 6,
+          "y": 2,
+          "w": 1,
+          "d": 1,
+          "height": 2,
+          "kind": "boundary",
+          "count": 1,
+          "summary": "Optional here.now credentials already on the machine. Never written into the page.",
+          "howBuilt": "Reads $HERENOW_API_KEY or ~/.herenow/credentials. If neither exists, publish stays anonymous. The value never enters the model."
+        },
+        {
+          "id": "publisher",
+          "code": "P",
+          "label": "Publisher",
+          "group": "press",
+          "x": 2,
+          "y": 6,
+          "w": 2,
+          "d": 1,
+          "height": 3,
+          "kind": "process",
+          "count": 1,
+          "inside": "publisher",
+          "summary": "Injects the model into the template and either writes a file or sends the folder to here.now.",
+          "howBuilt": "scripts/inject.py validates the model, then publish.sh uploads a directory whose root is index.html."
+        },
+        {
+          "id": "theme",
+          "code": "T",
+          "label": "Theme",
+          "group": "press",
+          "x": 5,
+          "y": 7,
+          "w": 1,
+          "d": 1,
+          "height": 2,
+          "kind": "engine",
+          "count": 2,
+          "summary": "Catppuccin Mocha when the browser prefers dark, Latte when it prefers light. A toggle can override.",
+          "howBuilt": "CSS variables on :root and [data-theme]. No webfonts, no CDN."
+        },
+        {
+          "id": "site",
+          "code": "O",
+          "label": "Site",
+          "group": "out",
+          "x": 10,
+          "y": 6,
+          "w": 2,
+          "d": 2,
+          "height": 1,
+          "kind": "output",
+          "count": 1,
+          "summary": "The only artifact that leaves: a self-contained page or a here.now URL.",
+          "howBuilt": "One HTML file. No network calls at runtime. The public URL is the only thing reported after publish."
+        }
+      ],
+      "edges": [
+        {
+          "from": "composer",
+          "to": "library",
+          "label": "model draft",
+          "packets": [
+            {
+              "label": "root view",
+              "detail": "{ title, startView, views.workshop }",
+              "accent": "blue"
+            }
+          ]
+        },
+        {
+          "from": "library",
+          "to": "scanner",
+          "label": "scan request",
+          "via": [
+            {
+              "x": 5,
+              "y": 2
+            }
+          ],
+          "packets": [
+            {
+              "label": "model blob",
+              "detail": "{ nodes, edges, packets[] }",
+              "accent": "yellow"
+            }
+          ]
+        },
+        {
+          "from": "scanner",
+          "to": "publisher",
+          "label": "clean model",
+          "via": [
+            {
+              "x": 8,
+              "y": 5
+            }
+          ],
+          "packets": [
+            {
+              "label": "scan result",
+              "detail": "{ status: \"clean\" }",
+              "accent": "green"
+            }
+          ]
+        },
+        {
+          "from": "identity",
+          "to": "publisher",
+          "label": "auth presence",
+          "via": [
+            {
+              "x": 6,
+              "y": 5
+            }
+          ],
+          "packets": [
+            {
+              "label": "mode",
+              "detail": "{ auth: \"authenticated\" | \"anonymous\" }",
+              "accent": "peach"
+            }
+          ]
+        },
+        {
+          "from": "theme",
+          "to": "publisher",
+          "label": "skin",
+          "packets": [
+            {
+              "label": "palette",
+              "detail": "{ mocha | latte, source: \"prefers-color-scheme\" }",
+              "accent": "mauve"
+            }
+          ]
+        },
+        {
+          "from": "publisher",
+          "to": "site",
+          "label": "page",
+          "packets": [
+            {
+              "label": "deliverable",
+              "detail": "{ kind: \"html\" | \"here.now\", pathOrUrl }",
+              "accent": "teal"
+            }
+          ]
+        }
+      ]
+    },
+    "scanner": {
+      "id": "scanner",
+      "title": "Scanner",
+      "parent": "workshop",
+      "summary": "Two checks, then a verdict. [[patterns]] catch known secret prefixes. [[assignments]] catch a secret-looking name bound to a long random value. [[verdict]] is the only output.",
+      "howBuilt": "A short Python walk over the model strings, then the same prefixes over the raw HTML. Placeholders such as redacted or \u003ctoken> are allowed.",
+      "howToRead": "The tower is a pipeline. Dots moving down are candidate strings. A red packet means the file must be rewritten.",
+      "groups": [
+        {
+          "id": "checks",
+          "label": "Checks",
+          "x": 1,
+          "y": 1,
+          "w": 8,
+          "d": 3
+        },
+        {
+          "id": "out",
+          "label": "Verdict",
+          "x": 3,
+          "y": 5,
+          "w": 4,
+          "d": 3
+        }
+      ],
+      "nodes": [
+        {
+          "id": "patterns",
+          "code": "R",
+          "label": "Prefix rules",
+          "group": "checks",
+          "x": 2,
+          "y": 2,
+          "height": 2,
+          "kind": "measure",
+          "count": 12,
+          "summary": "Regular expressions for tokens, PEM blocks, and cloud key ids.",
+          "howBuilt": "PREFIX_PATTERNS in scripts/scan.py. Add a pattern when a new vendor prefix shows up. Do not add English words."
+        },
+        {
+          "id": "assignments",
+          "code": "A",
+          "label": "Assignments",
+          "group": "checks",
+          "x": 6,
+          "y": 2,
+          "height": 3,
+          "kind": "measure",
+          "count": 1,
+          "summary": "Finds password, token, or api_key bound to a long mixed-alphabet string.",
+          "howBuilt": "ASSIGNMENT plus an entropy heuristic. Obvious placeholders pass."
+        },
+        {
+          "id": "verdict",
+          "code": "V",
+          "label": "Verdict",
+          "group": "out",
+          "x": 4,
+          "y": 6,
+          "w": 2,
+          "d": 1,
+          "height": 1,
+          "kind": "output",
+          "count": 2,
+          "summary": "Exit 0 and the word clean, or exit 1 and a list of paths. No middle.",
+          "howBuilt": "The skill treats a failed scan as a hard stop. Redact the model and run the scan again."
+        }
+      ],
+      "edges": [
+        {
+          "from": "patterns",
+          "to": "verdict",
+          "label": "prefix hits",
+          "via": [
+            {
+              "x": 2,
+              "y": 6
+            }
+          ],
+          "packets": [
+            {
+              "label": "hit",
+              "detail": "{ path: \"model.views.workshop.edges[0].packets[0].detail\", kind: \"prefix\" }",
+              "accent": "red"
+            }
+          ]
+        },
+        {
+          "from": "assignments",
+          "to": "verdict",
+          "label": "assignment hits",
+          "via": [
+            {
+              "x": 7,
+              "y": 6
+            }
+          ],
+          "packets": [
+            {
+              "label": "clean",
+              "detail": "{ path: \"model.views.scanner.nodes[1].howBuilt\", kind: \"none\" }",
+              "accent": "green"
+            }
+          ]
+        }
+      ]
+    },
+    "publisher": {
+      "id": "publisher",
+      "title": "Publisher",
+      "parent": "workshop",
+      "summary": "[[inject]] writes the model into the template. [[upload]] talks to here.now when that is the destination. [[finalize]] is the moment the URL exists.",
+      "howBuilt": "inject.py is local and dependency-free. Upload and finalize are the here.now publish script. The page is not live until finalize returns.",
+      "howToRead": "Left to right is the file path. The last block is the only one the reader of the diagram should hear about.",
+      "groups": [
+        {
+          "id": "local",
+          "label": "On disk",
+          "x": 0,
+          "y": 1,
+          "w": 4,
+          "d": 4
+        },
+        {
+          "id": "net",
+          "label": "On the press",
+          "x": 5,
+          "y": 1,
+          "w": 6,
+          "d": 4
+        }
+      ],
+      "nodes": [
+        {
+          "id": "inject",
+          "code": "J",
+          "label": "Inject",
+          "group": "local",
+          "x": 1,
+          "y": 2,
+          "height": 2,
+          "kind": "process",
+          "count": 1,
+          "summary": "Validates required fields, parent and inside links, and unique codes, then splices the JSON into the template.",
+          "howBuilt": "scripts/inject.py. Fails closed on a missing view or a dangling edge."
+        },
+        {
+          "id": "upload",
+          "code": "U",
+          "label": "Upload",
+          "group": "net",
+          "x": 6,
+          "y": 2,
+          "height": 2,
+          "kind": "process",
+          "count": 1,
+          "summary": "Creates or updates a site and sends the HTML. Uses saved credentials when present.",
+          "howBuilt": "here.now publish.sh --client cursor. Never pass --api-key in chat."
+        },
+        {
+          "id": "finalize",
+          "code": "F",
+          "label": "Finalize",
+          "group": "net",
+          "x": 8,
+          "y": 3,
+          "height": 3,
+          "kind": "output",
+          "count": 1,
+          "summary": "The site is live. The only number that matters is the public URL.",
+          "howBuilt": "Report siteUrl. Mention permanent vs 24h from publish_result.auth_mode. Stop unless asked to do more."
+        }
+      ],
+      "edges": [
+        {
+          "from": "inject",
+          "to": "upload",
+          "label": "html file",
+          "packets": [
+            {
+              "label": "index.html",
+              "detail": "{ bytes, contains: \"#diagram-model\" }",
+              "accent": "blue"
+            }
+          ]
+        },
+        {
+          "from": "upload",
+          "to": "finalize",
+          "label": "stored objects",
+          "packets": [
+            {
+              "label": "finalize",
+              "detail": "{ slug, auth: \"authenticated\" | \"anonymous\" }",
+              "accent": "teal"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+</script>
+  <script>
+    (function () {
+      const TILE_W = 56;
+      const TILE_H = 28;
+      const STOREY = 18;
+      const KINDS = {
+        process: "blue",
+        store: "lavender",
+        boundary: "peach",
+        output: "green",
+        engine: "teal",
+        measure: "yellow",
+      };
+
+      const canvas = document.getElementById("map");
+      const ctx = canvas.getContext("2d");
+      const tooltip = document.getElementById("tooltip");
+      const inspect = document.getElementById("inspect");
+      const wrap = document.getElementById("canvas-wrap");
+
+      let model;
+      try {
+        model = JSON.parse(document.getElementById("diagram-model").textContent);
+      } catch (error) {
+        showError("Diagram model is not valid JSON.");
+        return;
+      }
+      if (!model || !model.views || !model.views[model.startView]) {
+        showError("Diagram model is missing startView.");
+        return;
+      }
+
+      const state = {
+        viewId: model.startView,
+        selected: null,
+        hover: null,
+        tab: "does",
+        playing: true,
+        time: 0,
+        scale: 1,
+        panX: 0,
+        panY: 0,
+        dragging: false,
+        lastX: 0,
+        lastY: 0,
+        downX: 0,
+        downY: 0,
+        inspect: null,
+      };
+
+      const css = () => getComputedStyle(document.documentElement);
+      const token = (name) => css().getPropertyValue(name).trim();
+
+      function showError(message) {
+        const box = document.getElementById("error");
+        box.style.display = "block";
+        box.textContent = message;
+      }
+
+      function view() {
+        return model.views[state.viewId];
+      }
+
+      function nodeById(id) {
+        return view().nodes.find((node) => node.id === id);
+      }
+
+      function iso(x, y, z) {
+        return {
+          x: (x - y) * (TILE_W / 2),
+          y: (x + y) * (TILE_H / 2) - z * STOREY,
+        };
+      }
+
+      function worldToScreen(point) {
+        return {
+          x: point.x * state.scale + state.panX,
+          y: point.y * state.scale + state.panY,
+        };
+      }
+
+      function screenToWorld(sx, sy) {
+        return {
+          x: (sx - state.panX) / state.scale,
+          y: (sy - state.panY) / state.scale,
+        };
+      }
+
+      function footprint(node) {
+        return {
+          x: node.x,
+          y: node.y,
+          w: node.w || 1,
+          d: node.d || 1,
+          h: node.height,
+        };
+      }
+
+      function nodeCenter(node) {
+        const box = footprint(node);
+        return { x: box.x + box.w / 2, y: box.y + box.d / 2 };
+      }
+
+      function boxFaces(box) {
+        const p = (x, y, z) => iso(x, y, z);
+        return {
+          top: [
+            p(box.x, box.y, box.h),
+            p(box.x + box.w, box.y, box.h),
+            p(box.x + box.w, box.y + box.d, box.h),
+            p(box.x, box.y + box.d, box.h),
+          ],
+          right: [
+            p(box.x + box.w, box.y, 0),
+            p(box.x + box.w, box.y + box.d, 0),
+            p(box.x + box.w, box.y + box.d, box.h),
+            p(box.x + box.w, box.y, box.h),
+          ],
+          left: [
+            p(box.x, box.y + box.d, 0),
+            p(box.x + box.w, box.y + box.d, 0),
+            p(box.x + box.w, box.y + box.d, box.h),
+            p(box.x, box.y + box.d, box.h),
+          ],
+        };
+      }
+
+      function silhouette(box) {
+        const p = (x, y, z) => iso(x, y, z);
+        return [
+          p(box.x, box.y, box.h),
+          p(box.x + box.w, box.y, box.h),
+          p(box.x + box.w, box.y, 0),
+          p(box.x + box.w, box.y + box.d, 0),
+          p(box.x, box.y + box.d, 0),
+          p(box.x, box.y + box.d, box.h),
+        ];
+      }
+
+      function pointInPoly(point, poly) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const a = poly[i];
+          const b = poly[j];
+          const hit = (a.y > point.y) !== (b.y > point.y)
+            && point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x;
+          if (hit) inside = !inside;
+        }
+        return inside;
+      }
+
+      function fillPoly(poly, fill, stroke) {
+        ctx.beginPath();
+        ctx.moveTo(poly[0].x, poly[0].y);
+        for (let i = 1; i < poly.length; i += 1) ctx.lineTo(poly[i].x, poly[i].y);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.25;
+        ctx.stroke();
+      }
+
+      function mix(a, b, t) {
+        const pa = parseHex(a);
+        const pb = parseHex(b);
+        if (!pa || !pb) return a;
+        const r = Math.round(pa.r + (pb.r - pa.r) * t);
+        const g = Math.round(pa.g + (pb.g - pa.g) * t);
+        const bl = Math.round(pa.b + (pb.b - pa.b) * t);
+        return `rgb(${r}, ${g}, ${bl})`;
+      }
+
+      function parseHex(value) {
+        const hex = value.trim();
+        const m = hex.match(/^#([0-9a-f]{6})$/i);
+        if (!m) return null;
+        const n = parseInt(m[1], 16);
+        return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+      }
+
+      function kindColor(kind) {
+        return token(`--${KINDS[kind] || "blue"}`);
+      }
+
+      function viewBounds() {
+        const current = view();
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        const add = (x, y, z) => {
+          const p = iso(x, y, z);
+          minX = Math.min(minX, p.x);
+          minY = Math.min(minY, p.y);
+          maxX = Math.max(maxX, p.x);
+          maxY = Math.max(maxY, p.y);
+        };
+        current.groups.forEach((group) => {
+          add(group.x, group.y, 0);
+          add(group.x + group.w, group.y, 0);
+          add(group.x + group.w, group.y + group.d, 0);
+          add(group.x, group.y + group.d, 0);
+        });
+        current.nodes.forEach((node) => {
+          const box = footprint(node);
+          add(box.x, box.y, box.h);
+          add(box.x + box.w, box.y, 0);
+          add(box.x + box.w, box.y + box.d, 0);
+          add(box.x, box.y + box.d, 0);
+        });
+        if (!Number.isFinite(minX)) {
+          add(0, 0, 0);
+          add(6, 6, 0);
+        }
+        return { minX, minY, maxX, maxY };
+      }
+
+      function fitCamera() {
+        const rect = wrap.getBoundingClientRect();
+        const bounds = viewBounds();
+        const pad = 80;
+        const w = bounds.maxX - bounds.minX || 1;
+        const h = bounds.maxY - bounds.minY || 1;
+        const scale = Math.min((rect.width - pad * 2) / w, (rect.height - pad * 2) / h, 1.6);
+        state.scale = Math.max(0.55, scale);
+        state.panX = rect.width / 2 - ((bounds.minX + bounds.maxX) / 2) * state.scale;
+        state.panY = rect.height / 2 - ((bounds.minY + bounds.maxY) / 2) * state.scale;
+      }
+
+      function edgePath(edge) {
+        const from = nodeById(edge.from);
+        const to = nodeById(edge.to);
+        if (!from || !to) return [];
+        const points = [nodeCenter(from), ...(edge.via || []), nodeCenter(to)];
+        return points.map((point) => iso(point.x, point.y, 0.15));
+      }
+
+      function polylineLength(points) {
+        let length = 0;
+        for (let i = 1; i < points.length; i += 1) {
+          length += Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+        }
+        return length;
+      }
+
+      function pointAlong(points, t) {
+        if (points.length === 0) return { x: 0, y: 0 };
+        const total = polylineLength(points);
+        if (total === 0) return points[0];
+        const unit = ((t % 1) + 1) % 1;
+        let walk = unit * total;
+        for (let i = 1; i < points.length; i += 1) {
+          const span = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+          if (walk <= span) {
+            const u = span === 0 ? 0 : walk / span;
+            return {
+              x: points[i - 1].x + (points[i].x - points[i - 1].x) * u,
+              y: points[i - 1].y + (points[i].y - points[i - 1].y) * u,
+            };
+          }
+          walk -= span;
+        }
+        return points[points.length - 1];
+      }
+
+      function particles() {
+        const items = [];
+        view().edges.forEach((edge, edgeIndex) => {
+          const path = edgePath(edge);
+          edge.packets.forEach((packet, packetIndex) => {
+            const speed = 0.08 + (packetIndex * 0.015);
+            const phase = (edgeIndex * 0.17) + (packetIndex * 0.31);
+            const t = state.time * speed + phase;
+            items.push({
+              edge,
+              packet,
+              path,
+              world: pointAlong(path, t),
+            });
+          });
+        });
+        return items;
+      }
+
+      function resize() {
+        const rect = wrap.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function drawGrid() {
+        ctx.save();
+        ctx.translate(state.panX, state.panY);
+        ctx.scale(state.scale, state.scale);
+        ctx.fillStyle = token("--grid");
+        ctx.globalAlpha = 0.45;
+        for (let x = -2; x <= 18; x += 1) {
+          for (let y = -2; y <= 16; y += 1) {
+            const p = iso(x, y, 0);
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+        ctx.restore();
+      }
+
+      function drawGroups() {
+        ctx.save();
+        ctx.translate(state.panX, state.panY);
+        ctx.scale(state.scale, state.scale);
+        ctx.setLineDash([5, 4]);
+        ctx.strokeStyle = token("--overlay1");
+        ctx.lineWidth = 1.2;
+        ctx.font = "11px ui-monospace, monospace";
+        ctx.fillStyle = token("--overlay1");
+        view().groups.forEach((group) => {
+          const poly = [
+            iso(group.x, group.y, 0),
+            iso(group.x + group.w, group.y, 0),
+            iso(group.x + group.w, group.y + group.d, 0),
+            iso(group.x, group.y + group.d, 0),
+          ];
+          ctx.beginPath();
+          ctx.moveTo(poly[0].x, poly[0].y);
+          poly.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
+          ctx.closePath();
+          ctx.stroke();
+          const label = iso(group.x + 0.15, group.y + 0.15, 0);
+          ctx.fillText(group.label.toUpperCase(), label.x + 6, label.y - 6);
+        });
+        ctx.restore();
+      }
+
+      function drawEdges() {
+        ctx.save();
+        ctx.translate(state.panX, state.panY);
+        ctx.scale(state.scale, state.scale);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = token("--stroke");
+        ctx.fillStyle = token("--stroke");
+        view().edges.forEach((edge) => {
+          const path = edgePath(edge);
+          if (path.length < 2) return;
+          ctx.beginPath();
+          ctx.moveTo(path[0].x, path[0].y);
+          path.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
+          ctx.stroke();
+          path.forEach((p) => {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - 4);
+            ctx.lineTo(p.x + 3.5, p.y);
+            ctx.lineTo(p.x, p.y + 4);
+            ctx.lineTo(p.x - 3.5, p.y);
+            ctx.closePath();
+            ctx.fill();
+          });
+        });
+        ctx.restore();
+      }
+
+      function drawNodes() {
+        const nodes = view().nodes.slice().sort((a, b) => {
+          const aa = a.x + a.y;
+          const bb = b.x + b.y;
+          return aa - bb;
+        });
+        ctx.save();
+        ctx.translate(state.panX, state.panY);
+        ctx.scale(state.scale, state.scale);
+        nodes.forEach((node) => {
+          const box = footprint(node);
+          const faces = boxFaces(box);
+          const accent = kindColor(node.kind);
+          const base = token("--base");
+          const stroke = state.selected === node.id ? token("--mauve") : token("--stroke");
+          fillPoly(faces.left, mix(accent, base, 0.55), stroke);
+          fillPoly(faces.right, mix(accent, base, 0.72), stroke);
+          fillPoly(faces.top, mix(accent, token("--mantle"), 0.35), stroke);
+          const roof = iso(box.x + box.w / 2, box.y + box.d / 2, box.h);
+          ctx.fillStyle = token("--text");
+          ctx.font = "bold 16px ui-monospace, monospace";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(node.code, roof.x, roof.y);
+          if (state.hover === node.id || state.selected === node.id) {
+            ctx.setLineDash([]);
+            ctx.strokeStyle = token("--lavender");
+            ctx.lineWidth = 1.6;
+            const ring = [
+              iso(box.x - 0.12, box.y - 0.12, 0),
+              iso(box.x + box.w + 0.12, box.y - 0.12, 0),
+              iso(box.x + box.w + 0.12, box.y + box.d + 0.12, 0),
+              iso(box.x - 0.12, box.y + box.d + 0.12, 0),
+            ];
+            ctx.beginPath();
+            ctx.moveTo(ring[0].x, ring[0].y);
+            ring.slice(1).forEach((p) => ctx.lineTo(p.x, p.y));
+            ctx.closePath();
+            ctx.stroke();
+          }
+        });
+        ctx.restore();
+      }
+
+      function drawPackets() {
+        ctx.save();
+        ctx.translate(state.panX, state.panY);
+        ctx.scale(state.scale, state.scale);
+        particles().forEach((item) => {
+          const color = token(`--${item.packet.accent || "rosewater"}`);
+          ctx.beginPath();
+          ctx.fillStyle = color;
+          ctx.strokeStyle = token("--crust");
+          ctx.lineWidth = 1;
+          ctx.arc(item.world.x, item.world.y, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+        ctx.restore();
+      }
+
+      function draw() {
+        const rect = wrap.getBoundingClientRect();
+        ctx.clearRect(0, 0, rect.width, rect.height);
+        drawGrid();
+        drawGroups();
+        drawEdges();
+        drawNodes();
+        drawPackets();
+      }
+
+      function hitNode(sx, sy) {
+        const world = screenToWorld(sx, sy);
+        const nodes = view().nodes.slice().sort((a, b) => (b.x + b.y) - (a.x + a.y));
+        return nodes.find((node) => pointInPoly(world, silhouette(footprint(node)))) || null;
+      }
+
+      function hitPacket(sx, sy) {
+        const world = screenToWorld(sx, sy);
+        let best = null;
+        let bestDist = 10 / state.scale;
+        particles().forEach((item) => {
+          const dist = Math.hypot(item.world.x - world.x, item.world.y - world.y);
+          if (dist < bestDist) {
+            best = item;
+            bestDist = dist;
+          }
+        });
+        return best;
+      }
+
+      function markProse(text) {
+        const escape = (value) => value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+        return escape(text || "")
+          .split(/\n{2,}/)
+          .map((para) => {
+            const body = para.replace(/\[\[([a-zA-Z0-9_-]+)\]\]/g, (_, id) => {
+              const node = nodeById(id);
+              const label = node ? node.label : id;
+              return `<span class="chip" data-node="${id}">${escape(label)}</span>`;
+            });
+            return `<p>${body.replace(/\n/g, "<br>")}</p>`;
+          })
+          .join("");
+      }
+
+      function crumbs() {
+        const chain = [];
+        let id = state.viewId;
+        const guard = new Set();
+        while (id && model.views[id] && !guard.has(id)) {
+          guard.add(id);
+          chain.unshift(model.views[id]);
+          id = model.views[id].parent;
+        }
+        return chain;
+      }
+
+      function renderChrome() {
+        document.title = model.title;
+        document.getElementById("title").textContent = model.title;
+        const bits = [model.repo, model.subtitle].filter(Boolean);
+        document.getElementById("repo").textContent = bits.join(" · ");
+        document.getElementById("stats").innerHTML = (model.stats || [])
+          .map((stat) => `<div class="stat">${stat.label}: <b>${stat.value}</b></div>`)
+          .join("");
+
+        const current = view();
+        const index = document.getElementById("index");
+        const grouped = new Map();
+        current.groups.forEach((group) => grouped.set(group.id, []));
+        const loose = [];
+        current.nodes.forEach((node) => {
+          if (node.group && grouped.has(node.group)) grouped.get(node.group).push(node);
+          else loose.push(node);
+        });
+        let html = `<div class="section">${current.title}</div>`;
+        const renderItems = (nodes) => nodes.map((node) => `
+          <button type="button" class="nav-item" data-node="${node.id}" aria-current="${state.selected === node.id}">
+            <span class="code">${node.code}</span>
+            <span>${node.label}</span>
+            <span class="count">${node.count == null ? "" : node.count}</span>
+          </button>`).join("");
+        current.groups.forEach((group) => {
+          html += `<div class="section">${group.label}</div>${renderItems(grouped.get(group.id) || [])}`;
+        });
+        if (loose.length) html += `<div class="section">Also here</div>${renderItems(loose)}`;
+        index.innerHTML = html;
+
+        const selected = state.selected ? nodeById(state.selected) : null;
+        const subject = selected || current;
+        document.getElementById("panel-title").textContent = selected ? selected.label : current.title;
+        document.getElementById("prose").innerHTML = markProse(
+          state.tab === "does" ? subject.summary : subject.howBuilt
+        );
+        document.getElementById("howto").innerHTML = current.howToRead
+          ? `<div class="section">How to read it</div>${markProse(current.howToRead)}`
+          : "";
+        document.getElementById("crumbs").innerHTML = crumbs().map((item, i, all) => {
+          const here = i === all.length - 1;
+          return `<button type="button" class="crumb" data-view="${item.id}" data-here="${here}">${item.title}</button>${here ? "" : " / "}`;
+        }).join("");
+        document.getElementById("tab-does").setAttribute("aria-pressed", String(state.tab === "does"));
+        document.getElementById("tab-built").setAttribute("aria-pressed", String(state.tab === "built"));
+        document.getElementById("btn-play").setAttribute("aria-pressed", String(state.playing));
+        document.getElementById("btn-theme").textContent = currentTheme() === "mocha" ? "Latte" : "Mocha";
+      }
+
+      function currentTheme() {
+        const forced = document.documentElement.getAttribute("data-theme");
+        if (forced === "mocha" || forced === "latte") return forced;
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "mocha" : "latte";
+      }
+
+      function selectNode(id) {
+        state.selected = id;
+        renderChrome();
+      }
+
+      function openView(id) {
+        if (!model.views[id]) return;
+        state.viewId = id;
+        state.selected = null;
+        state.hover = null;
+        state.inspect = null;
+        inspect.hidden = true;
+        inspect.style.display = "none";
+        fitCamera();
+        renderChrome();
+      }
+
+      function goInside() {
+        const node = state.selected ? nodeById(state.selected) : null;
+        if (node && node.inside) openView(node.inside);
+      }
+
+      function goOut() {
+        const parent = view().parent;
+        if (parent) openView(parent);
+      }
+
+      function moveSelection(dx, dy) {
+        const nodes = view().nodes;
+        const current = state.selected ? nodeById(state.selected) : nodes[0];
+        if (!current) return;
+        let best = null;
+        let bestScore = Infinity;
+        nodes.forEach((node) => {
+          if (node.id === current.id) return;
+          const ox = (node.x - current.x);
+          const oy = (node.y - current.y);
+          const aligned = ox * dx + oy * dy;
+          if (aligned <= 0) return;
+          const score = Math.hypot(ox, oy) + Math.abs(ox * dy - oy * dx);
+          if (score < bestScore) {
+            best = node;
+            bestScore = score;
+          }
+        });
+        if (best) selectNode(best.id);
+      }
+
+      function showInspect(item, clientX, clientY) {
+        const rect = wrap.getBoundingClientRect();
+        inspect.hidden = false;
+        inspect.style.display = "block";
+        inspect.innerHTML = `
+          <div class="k">Packet${item.edge.label ? ` · ${item.edge.label}` : ""}</div>
+          <strong>${item.packet.label}</strong>
+          <pre>${item.packet.detail.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</pre>`;
+        inspect.style.left = `${Math.min(clientX - rect.left + 12, rect.width - 300)}px`;
+        inspect.style.top = `${Math.min(clientY - rect.top + 12, rect.height - 140)}px`;
+        state.inspect = item;
+      }
+
+      function localPoint(event) {
+        const rect = canvas.getBoundingClientRect();
+        return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      }
+
+      canvas.addEventListener("pointerdown", (event) => {
+        canvas.setPointerCapture(event.pointerId);
+        state.dragging = true;
+        state.lastX = event.clientX;
+        state.lastY = event.clientY;
+        state.downX = event.clientX;
+        state.downY = event.clientY;
+        canvas.classList.add("dragging");
+      });
+      canvas.addEventListener("pointermove", (event) => {
+        const local = localPoint(event);
+        if (state.dragging) {
+          state.panX += event.clientX - state.lastX;
+          state.panY += event.clientY - state.lastY;
+          state.lastX = event.clientX;
+          state.lastY = event.clientY;
+          return;
+        }
+        const node = hitNode(local.x, local.y);
+        state.hover = node ? node.id : null;
+        if (node) {
+          tooltip.style.display = "block";
+          tooltip.textContent = node.inside ? `${node.label}  (+ inside)` : node.label;
+          tooltip.style.left = `${local.x + 14}px`;
+          tooltip.style.top = `${local.y + 14}px`;
+        } else {
+          tooltip.style.display = "none";
+        }
+      });
+      canvas.addEventListener("pointerup", (event) => {
+        const moved = Math.hypot(event.clientX - state.downX, event.clientY - state.downY);
+        state.dragging = false;
+        canvas.classList.remove("dragging");
+        if (moved > 4) return;
+        const local = localPoint(event);
+        const packet = hitPacket(local.x, local.y);
+        if (packet) {
+          showInspect(packet, event.clientX, event.clientY);
+          return;
+        }
+        inspect.hidden = true;
+        inspect.style.display = "none";
+        const node = hitNode(local.x, local.y);
+        if (node) selectNode(node.id);
+        else selectNode(null);
+      });
+      canvas.addEventListener("dblclick", (event) => {
+        const local = localPoint(event);
+        const node = hitNode(local.x, local.y);
+        if (node) {
+          selectNode(node.id);
+          goInside();
+        }
+      });
+      canvas.addEventListener("wheel", (event) => {
+        event.preventDefault();
+        const local = localPoint(event);
+        const before = screenToWorld(local.x, local.y);
+        const next = Math.min(2.4, Math.max(0.4, state.scale * (event.deltaY < 0 ? 1.08 : 0.92)));
+        state.scale = next;
+        const after = worldToScreen(before);
+        state.panX += local.x - after.x;
+        state.panY += local.y - after.y;
+      }, { passive: false });
+
+      document.getElementById("index").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-node]");
+        if (button) selectNode(button.getAttribute("data-node"));
+      });
+      document.getElementById("prose").addEventListener("click", (event) => {
+        const chip = event.target.closest("[data-node]");
+        if (chip) selectNode(chip.getAttribute("data-node"));
+      });
+      document.getElementById("crumbs").addEventListener("click", (event) => {
+        const crumb = event.target.closest("[data-view]");
+        if (crumb) openView(crumb.getAttribute("data-view"));
+      });
+      document.getElementById("tab-does").addEventListener("click", () => {
+        state.tab = "does";
+        renderChrome();
+      });
+      document.getElementById("tab-built").addEventListener("click", () => {
+        state.tab = "built";
+        renderChrome();
+      });
+      document.getElementById("btn-play").addEventListener("click", () => {
+        state.playing = true;
+        renderChrome();
+      });
+      document.getElementById("btn-step").addEventListener("click", () => {
+        state.playing = false;
+        state.time += 1.6;
+        renderChrome();
+      });
+      document.getElementById("btn-reset").addEventListener("click", () => {
+        state.playing = true;
+        state.time = 0;
+        state.inspect = null;
+        inspect.hidden = true;
+        inspect.style.display = "none";
+        openView(model.startView);
+      });
+      document.getElementById("btn-theme").addEventListener("click", () => {
+        document.documentElement.setAttribute(
+          "data-theme",
+          currentTheme() === "mocha" ? "latte" : "mocha"
+        );
+        renderChrome();
+      });
+
+      window.addEventListener("keydown", (event) => {
+        if (event.target !== document.body && event.target !== canvas && event.target !== document.documentElement) {
+          if (event.target.tagName === "BUTTON") {
+            /* allow */
+          } else {
+            return;
+          }
+        }
+        if (event.key === "+" || event.key === "=") goInside();
+        if (event.key === "-" || event.key === "_") goOut();
+        if (event.key === "ArrowUp") moveSelection(0, -1);
+        if (event.key === "ArrowDown") moveSelection(0, 1);
+        if (event.key === "ArrowLeft") moveSelection(-1, 0);
+        if (event.key === "ArrowRight") moveSelection(1, 0);
+        if (event.key === "Escape") {
+          inspect.hidden = true;
+          inspect.style.display = "none";
+        }
+      });
+
+      const queryTheme = new URLSearchParams(location.search).get("theme");
+      if (queryTheme === "mocha" || queryTheme === "latte") {
+        document.documentElement.setAttribute("data-theme", queryTheme);
+      }
+
+      let last = performance.now();
+      function frame(now) {
+        const dt = Math.min(0.05, (now - last) / 1000);
+        last = now;
+        if (state.playing) state.time += dt;
+        draw();
+        requestAnimationFrame(frame);
+      }
+
+      window.addEventListener("resize", () => {
+        resize();
+      });
+
+      resize();
+      fitCamera();
+      renderChrome();
+      requestAnimationFrame(frame);
+    }());
+  </script>
+</body>
+</html>
