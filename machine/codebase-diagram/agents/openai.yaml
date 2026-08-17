@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codebase Diagram"
+  short_description: "Interactive isometric map of a codebase"
+  default_prompt: "Use $codebase-diagram to map this codebase."
