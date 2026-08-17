@@ -56,7 +56,7 @@ not its story.
 | `count` | number or string | no | Small figure in the index (instances, commands, files) |
 | `summary` | string | yes | Selected-block "what it does" |
 | `howBuilt` | string | yes | Selected-block "how it's built" |
-| `inside` | string | no | View id to open with `+` / double-click |
+| `inside` | string | no | View id a click opens. The page shows Back to return |
 
 Place blocks so they do not overlap. Leave a cell of air between neighbors.
 Keep the whole view inside a roughly 16 by 12 cell island so the camera can

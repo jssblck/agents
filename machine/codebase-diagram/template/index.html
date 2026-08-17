@@ -216,6 +216,7 @@
     .nav-item[aria-current="true"] { background: var(--surface0); }
     .nav-item .code { color: var(--overlay1); }
     .nav-item .count { color: var(--overlay0); }
+    .nav-item .more { color: var(--overlay1); }
     .crumb {
       border: 0;
       background: transparent;
@@ -310,6 +311,26 @@
       color: var(--subtext0);
     }
 
+    #depth-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 0 0 12px;
+    }
+    #depth-nav[data-empty="true"] { display: none; }
+    #btn-back, #btn-inside { text-transform: none; letter-spacing: 0; }
+    #btn-inside { border-color: var(--lavender); }
+    #btn-back-float {
+      display: none;
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 2;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    #btn-back-float[data-open="true"] { display: inline-flex; }
+
     #error {
       display: none;
       padding: 24px;
@@ -339,9 +360,8 @@
         <div id="help" role="dialog" aria-label="How to use this page">
           <h3>Controls</h3>
           <dl>
-            <dt>+</dt><dd>go inside a block</dd>
-            <dt>-</dt><dd>come back out</dd>
-            <dt>↑↓←→</dt><dd>move selection</dd>
+            <dt>click</dt><dd>open a block that has more rooms</dd>
+            <dt>back</dt><dd>return to the parent view</dd>
             <dt>hover</dt><dd>read a name</dd>
             <dt>drag</dt><dd>pan</dd>
             <dt>scroll</dt><dd>zoom</dd>
@@ -357,11 +377,16 @@
     <aside id="index"></aside>
     <div id="canvas-wrap">
       <canvas id="map"></canvas>
+      <button type="button" id="btn-back-float" data-open="false">Back</button>
       <div id="tooltip"></div>
       <div id="inspect" hidden></div>
     </div>
     <aside id="panel">
       <div id="crumbs"></div>
+      <div id="depth-nav" data-empty="true">
+        <button type="button" id="btn-back" hidden>Back</button>
+        <button type="button" id="btn-inside" hidden>Go inside</button>
+      </div>
       <h2 id="panel-title"></h2>
       <div id="tabs">
         <button type="button" id="tab-does" aria-pressed="true">What it does</button>
@@ -1228,7 +1253,7 @@
           ctx.font = "bold 16px ui-monospace, monospace";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          ctx.fillText(node.code, roof.x, roof.y);
+          ctx.fillText(node.inside ? `${node.code}+` : node.code, roof.x, roof.y);
           if (state.hover === node.id || state.selected === node.id) {
             ctx.setLineDash([]);
             ctx.strokeStyle = token("--lavender");
@@ -1352,7 +1377,7 @@
           <button type="button" class="nav-item" data-node="${node.id}" aria-current="${state.selected === node.id}">
             <span class="code">${node.code}</span>
             <span>${node.label}</span>
-            <span class="count">${node.count == null ? "" : node.count}</span>
+            <span class="count">${[node.count == null ? "" : node.count, node.inside ? "›" : ""].filter(Boolean).join(" ")}</span>
           </button>`).join("");
         current.groups.forEach((group) => {
           html += `<div class="section">${group.label}</div>${renderItems(grouped.get(group.id) || [])}`;
@@ -1378,6 +1403,28 @@
           const here = i === all.length - 1;
           return `<button type="button" class="crumb" data-view="${item.id}" data-here="${here}">${item.title}</button>${here ? "" : " / "}`;
         }).join("");
+        const parent = current.parent ? model.views[current.parent] : null;
+        const back = document.getElementById("btn-back");
+        const backFloat = document.getElementById("btn-back-float");
+        const insideBtn = document.getElementById("btn-inside");
+        const depth = document.getElementById("depth-nav");
+        if (parent) {
+          const label = `Back to ${parent.title}`;
+          back.hidden = false;
+          back.textContent = label;
+          backFloat.dataset.open = "true";
+          backFloat.textContent = label;
+        } else {
+          back.hidden = true;
+          backFloat.dataset.open = "false";
+        }
+        if (selected && selected.inside) {
+          insideBtn.hidden = false;
+          insideBtn.textContent = "Go inside";
+        } else {
+          insideBtn.hidden = true;
+        }
+        depth.dataset.empty = String(back.hidden && insideBtn.hidden);
         document.getElementById("tab-does").setAttribute("aria-pressed", String(state.tab === "does"));
         document.getElementById("tab-built").setAttribute("aria-pressed", String(state.tab === "built"));
         document.getElementById("btn-play").setAttribute("aria-pressed", String(state.playing));
@@ -1405,6 +1452,15 @@
         inspect.style.display = "none";
         fitCamera();
         renderChrome();
+      }
+
+      function openNode(node) {
+        if (node && node.inside) {
+          openView(node.inside);
+          return;
+        }
+        if (node) selectNode(node.id);
+        else selectNode(null);
       }
 
       function goInside() {
@@ -1486,7 +1542,7 @@
           tooltip.style.top = `${local.y + 14}px`;
         } else if (node) {
           tooltip.style.display = "block";
-          tooltip.textContent = node.inside ? `${node.label}  (+ inside)` : node.label;
+          tooltip.textContent = node.inside ? `${node.label}  (click to go inside)` : node.label;
           tooltip.style.left = `${local.x + 14}px`;
           tooltip.style.top = `${local.y + 14}px`;
         } else {
@@ -1507,16 +1563,12 @@
         inspect.hidden = true;
         inspect.style.display = "none";
         const node = hitNode(local.x, local.y);
-        if (node) selectNode(node.id);
-        else selectNode(null);
+        openNode(node);
       });
       canvas.addEventListener("dblclick", (event) => {
         const local = localPoint(event);
         const node = hitNode(local.x, local.y);
-        if (node) {
-          selectNode(node.id);
-          goInside();
-        }
+        openNode(node);
       });
       canvas.addEventListener("wheel", (event) => {
         event.preventDefault();
@@ -1531,16 +1583,19 @@
 
       document.getElementById("index").addEventListener("click", (event) => {
         const button = event.target.closest("[data-node]");
-        if (button) selectNode(button.getAttribute("data-node"));
+        if (button) openNode(nodeById(button.getAttribute("data-node")));
       });
       document.getElementById("prose").addEventListener("click", (event) => {
         const chip = event.target.closest("[data-node]");
-        if (chip) selectNode(chip.getAttribute("data-node"));
+        if (chip) openNode(nodeById(chip.getAttribute("data-node")));
       });
       document.getElementById("crumbs").addEventListener("click", (event) => {
         const crumb = event.target.closest("[data-view]");
         if (crumb) openView(crumb.getAttribute("data-view"));
       });
+      document.getElementById("btn-back").addEventListener("click", () => goOut());
+      document.getElementById("btn-back-float").addEventListener("click", () => goOut());
+      document.getElementById("btn-inside").addEventListener("click", () => goInside());
       document.getElementById("tab-does").addEventListener("click", () => {
         state.tab = "does";
         renderChrome();
