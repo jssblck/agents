@@ -1,0 +1,4 @@
+interface:
+  display_name: "social-fetch"
+  short_description: "Fetch a social post by URL as structured data"
+  default_prompt: "Use $social-fetch to pull this social post by URL."
