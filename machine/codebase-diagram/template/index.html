@@ -1447,9 +1447,12 @@
         state.viewId = id;
         state.selected = null;
         state.hover = null;
+        state.hoverPacket = null;
         state.inspect = null;
         inspect.hidden = true;
         inspect.style.display = "none";
+        tooltip.style.display = "none";
+        canvas.style.cursor = "";
         fitCamera();
         renderChrome();
       }
