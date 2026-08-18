@@ -1,0 +1,4 @@
+interface:
+  display_name: "Computer and Browser"
+  short_description: "Route desktop and signed-in Chrome work to the right surface"
+  default_prompt: "Use $computer-and-browser to pick the right surface for this browser or desktop task."

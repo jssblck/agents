@@ -1,0 +1,23 @@
+{
+  "name": "@jssblck/agent-browser",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server for the Agent Browser Chrome extension. Builds to machine/computer-and-browser/mcp/agent-browser.mjs.",
+  "scripts": {
+    "build": "esbuild src/mcp.ts --bundle --platform=node --format=esm --target=node22 --banner:js='#!/usr/bin/env node' --outfile=../machine/computer-and-browser/mcp/agent-browser.mjs",
+    "check": "bun run build && git diff --exit-code -- ../machine/computer-and-browser/mcp",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.30.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0",
+    "vitest": "4.1.10"
+  }
+}
