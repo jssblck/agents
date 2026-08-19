@@ -212,6 +212,53 @@ tooling. Keep the public API of a module explicit.
   RNG.
 - Descriptive `describe`/`it` names that read as behavior sentences.
 
+## React: effect discipline
+
+`useEffect` synchronizes a component with a system React does not own. It is not
+a data-flow tool. Effect chains (an effect sets state, which triggers another
+effect) turn a component from a readable tree into a timeline that a reader,
+human or agent, must simulate step by step. Default to zero effects; see
+[You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect).
+
+- **Never** use an effect for:
+  - Derived state: compute it during render (`useMemo` if expensive).
+  - Resetting state when a prop changes: pass a `key` instead.
+  - Reacting to a user event: put the logic in the event handler.
+  - Data fetching: use the project's data-fetching layer (TanStack Query, SWR,
+    or the framework loader), which handles races, caching, and cancellation.
+- **Allowed:** synchronizing with an external system: DOM APIs, subscriptions,
+  timers, third-party widgets, analytics. Every such effect returns a cleanup
+  function and lists honest dependencies. For external stores, prefer
+  `useSyncExternalStore` over a hand-rolled subscribe effect.
+- **Ban the import in product code (default).** External-system effects live in
+  a small allow-listed directory of wrapper hooks (`useEventListener`,
+  `useInterval`, the analytics hook); components compose those wrappers and
+  stay effect-free. Ban `useLayoutEffect` with the same rule, or it becomes the
+  dodge:
+  ```jsonc
+  // .oxlintrc.json additions
+  "plugins": ["react"],
+  "rules": {
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "error",
+    "no-restricted-imports": ["error", {
+      "paths": [{
+        "name": "react",
+        "importNames": ["useEffect", "useLayoutEffect"],
+        "message": "Derive during render, handle in the event handler, or use the data-fetching layer. External-system sync goes in src/hooks/effects/."
+      }]
+    }]
+  },
+  "overrides": [
+    { "files": ["src/hooks/effects/**"], "rules": { "no-restricted-imports": "off" } }
+  ]
+  ```
+  The allow-listed wrappers still obey the hooks rules: never suppress
+  `exhaustive-deps` (a mount-only effect with silenced dependencies captures
+  stale props and state), and do not add a `useMountEffect`-style wrapper that
+  hides the dependency array. In review, reject `React.useEffect` member calls;
+  with the modern JSX transform nothing needs the React namespace import.
+
 ## Anti-patterns to refuse
 
 `any` (use `unknown` + narrowing); non-null `!` to silence the checker instead of
