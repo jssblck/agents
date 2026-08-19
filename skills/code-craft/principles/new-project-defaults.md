@@ -42,8 +42,11 @@ Notes:
   `no-floating-promises`, and the vendored
   [anti-slop](https://github.com/dmmulroy/anti-slop) plugin (`as` needs a
   `// SAFETY:` comment; no `unknown` in signatures; no `typeof` narrowing; no
-  module mocks). See [`../languages/typescript.md`](../languages/typescript.md)
-  for the config block.
+  module mocks). **In React projects, also ban the `useEffect` and
+  `useLayoutEffect` imports in product code** (`no-restricted-imports`);
+  external-system effects live in one allow-listed wrapper directory. See
+  [`../languages/typescript.md`](../languages/typescript.md) for the config
+  blocks.
 - **Python: `ruff` for both** format and lint (it replaces black, isort, flake8,
   pyupgrade, and more). One fast tool, one config block in `pyproject.toml`.
   Pair it with a strict type checker (`mypy --strict` or `pyright`) in CI.
