@@ -1,9 +1,12 @@
-// Every command the MCP server can run against this browser.
+// Every command an agent can run against this browser.
 //
-// Reads go through chrome.scripting, which needs no debugger banner. Input,
-// arbitrary JavaScript, and screenshots of background tabs go through CDP.
+// Page and input commands act on the calling session's leased tab, so an
+// agent can only touch the tab it opened or was handed. Reads go through
+// chrome.scripting, which needs no debugger banner. Input, arbitrary
+// JavaScript, and screenshots of background tabs go through CDP.
 import * as cdp from "./cdp.js";
 import { cancelPickSession, runPickSession } from "./pick.js";
+import * as sessions from "./sessions.js";
 
 const LOAD_TIMEOUT_MS = 30_000;
 const WAIT_POLL_MS = 200;
@@ -24,19 +27,38 @@ const KEYS = {
   End: { keyCode: 35, code: "End" },
 };
 
-const summarize = (tab) => ({
+const summarize = (tab, session = null) => ({
   tabId: tab.id,
   windowId: tab.windowId,
   url: tab.url ?? "",
   title: tab.title ?? "",
   active: tab.active === true,
   loading: tab.status === "loading",
+  session,
 });
 
 async function requireTab(tabId) {
-  const tab = await chrome.tabs.get(tabId);
+  const tab = await chrome.tabs.get(tabId).catch(() => undefined);
   if (!tab) throw new Error(`No such tab: ${tabId}`);
   return tab;
+}
+
+/** The tab this session leases, checked against the live browser. */
+async function sessionTab(session) {
+  const lease = await sessions.leaseFor(session);
+  if (!lease) {
+    throw new Error(
+      "This session has no browser tab. Open one with the open tool, or claim an existing tab with the attach tool.",
+    );
+  }
+  const tab = await chrome.tabs.get(lease.tabId).catch(() => undefined);
+  if (!tab) {
+    await sessions.forgetTab(lease.tabId);
+    throw new Error(
+      "This session's tab is gone. Open a new one with the open tool, or claim an existing tab with the attach tool.",
+    );
+  }
+  return tab.id;
 }
 
 async function runInPage(tabId, func, args = [], world = "ISOLATED") {
@@ -117,69 +139,83 @@ const commands = {
   },
 
   async "tabs.list"() {
-    const tabs = await chrome.tabs.query({});
-    return { tabs: tabs.map(summarize) };
+    const [tabs, owners] = await Promise.all([chrome.tabs.query({}), sessions.owners()]);
+    return { tabs: tabs.map((tab) => summarize(tab, owners.get(tab.id) ?? null)) };
   },
 
-  async "tabs.get"({ tabId }) {
-    return summarize(await requireTab(tabId));
+  async "session.status"({ session }) {
+    const lease = await sessions.leaseFor(session);
+    if (!lease) return { tab: null };
+    const tab = await chrome.tabs.get(lease.tabId).catch(() => undefined);
+    if (!tab) {
+      await sessions.forgetTab(lease.tabId);
+      return { tab: null };
+    }
+    return { tab: summarize(tab, session) };
   },
 
-  async "tabs.open"({ url, active = false, windowId }) {
-    const tab = await chrome.tabs.create({
-      url,
-      active,
-      ...(windowId === undefined ? {} : { windowId }),
-    });
+  /** Navigate the session's tab, or open and claim a new one. */
+  async "session.open"({ session, url, active = false, label }) {
+    const lease = await sessions.leaseFor(session);
+    const existing = lease ? await chrome.tabs.get(lease.tabId).catch(() => undefined) : undefined;
+    if (existing) {
+      if (label) await sessions.relabel(session, label);
+      await chrome.tabs.update(existing.id, { url });
+      await waitForLoad(existing.id);
+      return summarize(await requireTab(existing.id), session);
+    }
+    const tab = await chrome.tabs.create({ url, active });
+    await sessions.claim(session, tab.id, "agent", label);
     await waitForLoad(tab.id);
-    return summarize(await requireTab(tab.id));
+    return summarize(await requireTab(tab.id), session);
   },
 
-  async "tabs.navigate"({ tabId, url }) {
+  async "session.attach"({ session, tabId, label }) {
     await requireTab(tabId);
-    await chrome.tabs.update(tabId, { url });
-    await waitForLoad(tabId);
-    return summarize(await requireTab(tabId));
+    await sessions.claim(session, tabId, "user", label);
+    return summarize(await requireTab(tabId), session);
   },
 
-  async "tabs.select"({ tabId }) {
-    const tab = await requireTab(tabId);
-    await chrome.tabs.update(tabId, { active: true });
+  async "session.release"({ session }) {
+    const lease = await sessions.release(session);
+    return { released: lease?.tabId ?? null };
+  },
+
+  async "session.close"({ session }) {
+    const lease = await sessions.release(session);
+    if (!lease) return { closed: null };
+    await chrome.tabs.remove(lease.tabId).catch(() => undefined);
+    return { closed: lease.tabId };
+  },
+
+  async "session.show"({ session }) {
+    const tabId = await sessionTab(session);
+    const tab = await chrome.tabs.update(tabId, { active: true });
     await chrome.windows.update(tab.windowId, { focused: true });
-    return summarize(await requireTab(tabId));
+    return summarize(await requireTab(tabId), session);
   },
 
-  async "tabs.close"({ tabId }) {
-    await cdp.detach(tabId);
-    await chrome.tabs.remove(tabId);
-    return { closed: tabId };
-  },
-
-  async "tabs.reload"({ tabId }) {
+  async "session.reload"({ session }) {
+    const tabId = await sessionTab(session);
     await chrome.tabs.reload(tabId);
     await waitForLoad(tabId);
-    return summarize(await requireTab(tabId));
+    return summarize(await requireTab(tabId), session);
   },
 
-  async "tabs.release"({ tabId }) {
-    await cdp.detach(tabId);
-    return { released: tabId };
-  },
-
-  async "page.text"({ tabId }) {
-    await requireTab(tabId);
+  async "page.text"({ session }) {
+    const tabId = await sessionTab(session);
     const text = await runInPage(tabId, () => document.body?.innerText ?? "");
     return { text };
   },
 
-  async "page.html"({ tabId }) {
-    await requireTab(tabId);
+  async "page.html"({ session }) {
+    const tabId = await sessionTab(session);
     const html = await runInPage(tabId, () => document.documentElement?.outerHTML ?? "");
     return { html };
   },
 
-  async "page.eval"({ tabId, expression }) {
-    await requireTab(tabId);
+  async "page.eval"({ session, expression }) {
+    const tabId = await sessionTab(session);
     const response = await cdp.send(tabId, "Runtime.evaluate", {
       expression,
       returnByValue: true,
@@ -194,8 +230,8 @@ const commands = {
     return { value: response.result.value ?? response.result.description ?? null };
   },
 
-  async "page.screenshot"({ tabId, fullPage = false }) {
-    await requireTab(tabId);
+  async "page.screenshot"({ session, fullPage = false }) {
+    const tabId = await sessionTab(session);
     const { data } = await cdp.send(tabId, "Page.captureScreenshot", {
       format: "png",
       captureBeyondViewport: fullPage,
@@ -203,8 +239,8 @@ const commands = {
     return { data };
   },
 
-  async "page.pick"({ tabId }) {
-    await requireTab(tabId);
+  async "page.pick"({ session }) {
+    const tabId = await sessionTab(session);
     let picked;
     try {
       picked = await runInPage(tabId, runPickSession, [], "MAIN");
@@ -217,37 +253,28 @@ const commands = {
     const rect = picked.rect ?? {};
     const pad = 8;
     const clip = {
-      x: Math.max(0, Number(rect.x) || 0) - pad,
-      y: Math.max(0, Number(rect.y) || 0) - pad,
+      x: Math.max(0, (Number(rect.x) || 0) - pad),
+      y: Math.max(0, (Number(rect.y) || 0) - pad),
       width: Math.max(1, (Number(rect.width) || 1) + pad * 2),
       height: Math.max(1, (Number(rect.height) || 1) + pad * 2),
       scale: 1,
     };
     try {
-      const { data } = await cdp.send(tabId, "Page.captureScreenshot", {
-        format: "png",
-        clip: {
-          x: Math.max(0, clip.x),
-          y: Math.max(0, clip.y),
-          width: clip.width,
-          height: clip.height,
-          scale: 1,
-        },
-      });
+      const { data } = await cdp.send(tabId, "Page.captureScreenshot", { format: "png", clip });
       return { ...picked, screenshot: data };
     } catch {
       return { ...picked, screenshot: null };
     }
   },
 
-  async "page.pickCancel"({ tabId }) {
-    await requireTab(tabId);
+  async "page.pickCancel"({ session }) {
+    const tabId = await sessionTab(session);
     await runInPage(tabId, cancelPickSession, [], "MAIN").catch(() => undefined);
     return { cancelled: true };
   },
 
-  async "page.wait"({ tabId, selector, timeoutMs = 10_000 }) {
-    await requireTab(tabId);
+  async "page.wait"({ session, selector, timeoutMs = 10_000 }) {
+    const tabId = await sessionTab(session);
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
       const found = await runInPage(tabId, (s) => document.querySelector(s) !== null, [selector]);
@@ -257,8 +284,8 @@ const commands = {
     throw new Error(`Timed out after ${timeoutMs}ms waiting for ${selector}`);
   },
 
-  async "input.click"({ tabId, selector, x, y }) {
-    await requireTab(tabId);
+  async "input.click"({ session, selector, x, y }) {
+    const tabId = await sessionTab(session);
     if (selector) {
       const point = await runInPage(tabId, locate, [selector]);
       if (!point) throw new Error(`No visible element matches ${selector}`);
@@ -272,8 +299,8 @@ const commands = {
     return { clicked: `${x},${y}` };
   },
 
-  async "input.type"({ tabId, selector, text, submit = false }) {
-    await requireTab(tabId);
+  async "input.type"({ session, selector, text, submit = false }) {
+    const tabId = await sessionTab(session);
     if (selector) {
       const point = await runInPage(tabId, locate, [selector]);
       if (!point) throw new Error(`No visible element matches ${selector}`);
@@ -286,16 +313,16 @@ const commands = {
     return { typed: text.length };
   },
 
-  async "input.press"({ tabId, key }) {
-    await requireTab(tabId);
+  async "input.press"({ session, key }) {
+    const tabId = await sessionTab(session);
     await pressKey(tabId, key);
     return { pressed: key };
   },
 
   // A CDP wheel event only resolves once the compositor produces a frame, and
   // a background tab never does, so scrolling runs in the page instead.
-  async "input.scroll"({ tabId, deltaY = 600 }) {
-    await requireTab(tabId);
+  async "input.scroll"({ session, deltaY = 600 }) {
+    const tabId = await sessionTab(session);
     const scrollY = await runInPage(
       tabId,
       (delta) => {
@@ -311,5 +338,8 @@ const commands = {
 export async function runCommand(method, params) {
   const command = commands[method];
   if (!command) throw new Error(`Unknown command: ${method}`);
+  if (method !== "info" && method !== "tabs.list" && typeof params.session !== "string") {
+    throw new Error(`${method} needs a session`);
+  }
   return (await command(params)) ?? null;
 }

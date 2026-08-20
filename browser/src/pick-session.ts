@@ -1,3 +1,5 @@
+import type { HostPool } from "./hosts.ts";
+import type { TabSummary } from "./mcp-tools.ts";
 import {
   formatPickLabel,
   newPickId,
@@ -6,10 +8,9 @@ import {
   type PickedElement,
 } from "./pick.ts";
 import type { PickStore } from "./picks.ts";
-import type { TabRegistry, TabSummary } from "./tabs.ts";
 
 export interface PickSessionDeps {
-  tabs: TabRegistry;
+  hosts: HostPool;
   picks: PickStore;
 }
 
@@ -33,38 +34,40 @@ export interface CompletedPick {
   screenshotDataUrl: string | null;
 }
 
-async function resolvePickTab(tabs: TabRegistry, sessionKey: string) {
-  const bound = await tabs.resolve(sessionKey);
-  if (bound) return bound;
+/** Pick from the session's tab; with none, claim the tab the user is looking at. */
+async function ensurePickTab(hosts: HostPool, session: string) {
+  const connection = await hosts.primary();
+  const { tab } = await connection.request<{ tab: TabSummary | null }>("session.status", { session });
+  if (tab) return connection;
 
-  const connection = tabs.connection();
-  const { tabs: open } = await connection.request<{ tabs: TabSummary[] }>("tabs.list");
-  const active = open.find((tab) => tab.active) ?? open[0];
-  if (!active) {
+  const { tabs } = await connection.request<{ tabs: TabSummary[] }>("tabs.list");
+  const free = tabs.filter((candidate) => candidate.session === null);
+  const target = free.find((candidate) => candidate.active) ?? free[0];
+  if (!target) {
     throw new Error(
       "No tab to pick from. Open a URL with the open tool, or focus a tab in Chrome.",
     );
   }
-  await tabs.attach(sessionKey, active.tabId);
-  return { connection, tabId: active.tabId };
+  await connection.request("session.attach", { session, tabId: target.tabId });
+  return connection;
 }
 
 /** Bring the tab forward and wait for the user to click an element. */
 export async function pickFromSession(
   deps: PickSessionDeps,
-  sessionKey: string,
+  session: string,
   timeoutMs = PICK_TIMEOUT_MS,
 ): Promise<CompletedPick> {
-  const { connection, tabId } = await resolvePickTab(deps.tabs, sessionKey);
-  await connection.request("tabs.select", { tabId });
+  const connection = await ensurePickTab(deps.hosts, session);
+  await connection.request("session.show", { session });
   const raw = await connection.request<ExtensionPickResult>(
     "page.pick",
-    { tabId },
+    { session },
     timeoutMs + 5_000,
   );
   const pick = parsePickedElement(raw, {
     id: newPickId(),
-    sessionKey,
+    sessionKey: session,
     createdAt: new Date().toISOString(),
   });
   if (!pick) throw new Error("The page did not return a usable element.");
@@ -78,11 +81,8 @@ export async function pickFromSession(
 
 export async function cancelPickInSession(
   deps: PickSessionDeps,
-  sessionKey: string,
+  session: string,
 ): Promise<void> {
-  const resolved = await deps.tabs.resolve(sessionKey);
-  if (!resolved) return;
-  await resolved.connection
-    .request("page.pickCancel", { tabId: resolved.tabId })
-    .catch(() => undefined);
+  const connection = await deps.hosts.primary().catch(() => undefined);
+  await connection?.request("page.pickCancel", { session }).catch(() => undefined);
 }
