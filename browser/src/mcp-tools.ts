@@ -4,22 +4,43 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 
-import type { Bridge } from "./bridge.ts";
+import type { HostPool } from "./hosts.ts";
 import { mcpSessionId } from "./mcp-session.ts";
 import { formatPickContext, PICK_TIMEOUT_MS } from "./pick.ts";
 import { cancelPickInSession, pickFromSession } from "./pick-session.ts";
 import type { PickStore } from "./picks.ts";
-import type { TabRegistry, TabSummary } from "./tabs.ts";
 import { normalizeUrl } from "./url.ts";
 
 const MAX_EXTRACT_CHARS = 200_000;
-const sessionField = z.string().optional();
+/** Page loads wait up to 30s inside the extension; give the round trip room. */
+const LOAD_TIMEOUT_MS = 40_000;
+const sessionField = z
+  .string()
+  .optional()
+  .describe("Session name. Defaults to this process, which is one per agent.");
+const labelField = z
+  .string()
+  .optional()
+  .describe("Short name shown on this session's tab group, such as the task");
 
 export interface McpToolRuntime {
-  bridge: Bridge;
-  tabs: TabRegistry;
+  hosts: HostPool;
   picks: PickStore;
+  /** Version in the bundled extension manifest, to spot a stale loaded copy. */
+  expectedVersion: string;
 }
+
+export interface TabSummary {
+  tabId: number;
+  windowId: number;
+  url: string;
+  title: string;
+  active: boolean;
+  loading: boolean;
+  /** Session that holds this tab, if any. */
+  session: string | null;
+}
+
 
 type ToolContent = { type: "text"; text: string } | { type: "image"; data: string; mimeType: string };
 
@@ -40,12 +61,20 @@ function clip(value: string): string {
   return `${value.slice(0, MAX_EXTRACT_CHARS)}\n\n[truncated at ${MAX_EXTRACT_CHARS} characters of ${value.length}]`;
 }
 
-function formatTab(tab: TabSummary): string {
-  return `${tab.active ? "*" : " "} ${tab.tabId}  ${tab.title || tab.url}\n    ${tab.url}`;
+function formatTab(tab: TabSummary, session: string): string {
+  const owner =
+    tab.session === null ? "" : tab.session === session ? "  [yours]" : `  [agent: ${tab.session}]`;
+  return `${tab.active ? "*" : " "} ${tab.tabId}  ${tab.title || tab.url}${owner}\n    ${tab.url}`;
 }
 
 export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): void {
-  const { bridge, tabs, picks } = runtime;
+  const { hosts, picks, expectedVersion } = runtime;
+
+  const withTab = async (session: string | undefined) => {
+    const sessionKey = mcpSessionId(session);
+    const connection = await hosts.primary();
+    return { sessionKey, connection };
+  };
 
   server.registerTool(
     "status",
@@ -56,13 +85,12 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     async ({ session }) => {
       try {
         const sessionKey = mcpSessionId(session);
-        const connections = bridge.connections();
-        const resolved = await tabs.resolve(sessionKey);
-        const tab = resolved
-          ? await resolved.connection.request<TabSummary>("tabs.get", {
-              tabId: resolved.tabId,
-            })
+        const connections = await hosts.refresh();
+        const primary = connections[0];
+        const tab = primary
+          ? (await primary.request<{ tab: TabSummary | null }>("session.status", { session: sessionKey })).tab
           : null;
+        const stale = connections.filter((connection) => connection.version !== expectedVersion);
         return ok(
           JSON.stringify(
             {
@@ -73,6 +101,11 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
               })),
               sessionKey,
               tab,
+              ...(connections.length === 0
+                ? { hint: "Open Chrome with the Agent Browser extension enabled, or reload it from chrome://extensions." }
+                : stale.length
+                  ? { hint: `The extension is ${stale[0].version} but this server expects ${expectedVersion}. Reload it from chrome://extensions.` }
+                  : {}),
             },
             null,
             2,
@@ -90,13 +123,13 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
       description: "List every tab open in the user's Chrome",
       inputSchema: { session: sessionField },
     },
-    async () => {
+    async ({ session }) => {
       try {
-        const { tabs: listed } = await tabs
-          .connection()
-          .request<{ tabs: TabSummary[] }>("tabs.list");
-        if (listed.length === 0) return ok("No open tabs.");
-        return ok(listed.map(formatTab).join("\n"));
+        const sessionKey = mcpSessionId(session);
+        const connection = await hosts.primary();
+        const { tabs } = await connection.request<{ tabs: TabSummary[] }>("tabs.list");
+        if (tabs.length === 0) return ok("No open tabs.");
+        return ok(tabs.map((tab) => formatTab(tab, sessionKey)).join("\n"));
       } catch (error) {
         return fail(error);
       }
@@ -107,18 +140,22 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     "open",
     {
       description:
-        "Open or navigate this session's tab. Creates and claims a background tab when none is bound.",
+        "Open or navigate this session's tab. Creates and claims a background tab in this session's tab group when none is bound.",
       inputSchema: {
         url: z.string().min(1),
         show: z.boolean().optional(),
+        label: labelField,
         session: sessionField,
       },
     },
-    async ({ url, show, session }) => {
+    async ({ url, show, label, session }) => {
       try {
-        const tab = await tabs.open(mcpSessionId(session), normalizeUrl(url), {
-          active: show === true,
-        });
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request<TabSummary>(
+          "session.open",
+          { session: sessionKey, url: normalizeUrl(url), active: show === true, label },
+          LOAD_TIMEOUT_MS,
+        );
         return ok(`Tab ${tab.tabId}: ${tab.url}`);
       } catch (error) {
         return fail(error);
@@ -129,12 +166,18 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
   server.registerTool(
     "attach",
     {
-      description: "Claim one of the user's existing tabs for this session",
-      inputSchema: { tabId: z.number().int(), session: sessionField },
+      description:
+        "Claim one of the user's existing tabs for this session. Fails if another agent holds it.",
+      inputSchema: { tabId: z.number().int(), label: labelField, session: sessionField },
     },
-    async ({ tabId, session }) => {
+    async ({ tabId, label, session }) => {
       try {
-        const tab = await tabs.attach(mcpSessionId(session), tabId);
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request<TabSummary>("session.attach", {
+          session: sessionKey,
+          tabId,
+          label,
+        });
         return ok(`Attached to tab ${tab.tabId}: ${tab.url}`);
       } catch (error) {
         return fail(error);
@@ -150,8 +193,12 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        const binding = await tabs.release(mcpSessionId(session));
-        return ok(binding ? `Released tab ${binding.tabId}.` : "No tab was bound.");
+        const { sessionKey, connection } = await withTab(session);
+        const { released } = await connection.request<{ released: number | null }>(
+          "session.release",
+          { session: sessionKey },
+        );
+        return ok(released === null ? "No tab was bound." : `Released tab ${released}.`);
       } catch (error) {
         return fail(error);
       }
@@ -166,11 +213,11 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        const sessionKey = mcpSessionId(session);
-        const { connection, tabId } = await tabs.require(sessionKey);
-        await connection.request("tabs.close", { tabId });
-        await tabs.release(sessionKey);
-        return ok(`Closed tab ${tabId}.`);
+        const { sessionKey, connection } = await withTab(session);
+        const { closed } = await connection.request<{ closed: number | null }>("session.close", {
+          session: sessionKey,
+        });
+        return ok(closed === null ? "No tab was bound." : `Closed tab ${closed}.`);
       } catch (error) {
         return fail(error);
       }
@@ -185,8 +232,8 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const tab = await connection.request<TabSummary>("tabs.select", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request<TabSummary>("session.show", { session: sessionKey });
         return ok(`Showing ${tab.url}`);
       } catch (error) {
         return fail(error);
@@ -202,8 +249,12 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const tab = await connection.request<TabSummary>("tabs.reload", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request<TabSummary>(
+          "session.reload",
+          { session: sessionKey },
+          LOAD_TIMEOUT_MS,
+        );
         return ok(`Reloaded ${tab.url}`);
       } catch (error) {
         return fail(error);
@@ -219,8 +270,8 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const result = await connection.request<{ text?: string }>("page.text", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const result = await connection.request<{ text?: string }>("page.text", { session: sessionKey });
         return ok(clip(String(result.text ?? "")));
       } catch (error) {
         return fail(error);
@@ -236,8 +287,8 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const result = await connection.request<{ html?: string }>("page.html", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const result = await connection.request<{ html?: string }>("page.html", { session: sessionKey });
         return ok(clip(String(result.html ?? "")));
       } catch (error) {
         return fail(error);
@@ -253,9 +304,9 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ expression, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         const { value } = await connection.request<{ value: unknown }>("page.eval", {
-          tabId,
+          session: sessionKey,
           expression,
         });
         return ok(typeof value === "string" ? value : JSON.stringify(value, null, 2));
@@ -273,8 +324,8 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ selector, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        await connection.request("input.click", { tabId, selector });
+        const { sessionKey, connection } = await withTab(session);
+        await connection.request("input.click", { session: sessionKey, selector });
         return ok(`Clicked ${selector}`);
       } catch (error) {
         return fail(error);
@@ -295,9 +346,9 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ selector, text, submit, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         await connection.request("input.type", {
-          tabId,
+          session: sessionKey,
           selector,
           text,
           submit: submit === true,
@@ -317,8 +368,8 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ key, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        await connection.request("input.press", { tabId, key });
+        const { sessionKey, connection } = await withTab(session);
+        await connection.request("input.press", { session: sessionKey, key });
         return ok(`Pressed ${key}`);
       } catch (error) {
         return fail(error);
@@ -339,9 +390,9 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     async ({ up, amount, session }) => {
       try {
         const pixels = amount ?? 600;
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         await connection.request("input.scroll", {
-          tabId,
+          session: sessionKey,
           deltaY: up === true ? -pixels : pixels,
         });
         return ok(up === true ? `Scrolled up ${pixels}px` : `Scrolled down ${pixels}px`);
@@ -364,10 +415,10 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     async ({ selector, timeoutMs, session }) => {
       try {
         const timeout = timeoutMs ?? 10_000;
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         await connection.request(
           "page.wait",
-          { tabId, selector, timeoutMs: timeout },
+          { session: sessionKey, selector, timeoutMs: timeout },
           timeout + 5_000,
         );
         return ok(`Found ${selector}`);
@@ -390,9 +441,9 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ path, fullPage, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         const { data } = await connection.request<{ data: string }>("page.screenshot", {
-          tabId,
+          session: sessionKey,
           fullPage: fullPage === true,
         });
         const image = { type: "image" as const, data, mimeType: "image/png" };
@@ -420,7 +471,7 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     async ({ timeoutMs, session }) => {
       try {
         const { pick, label } = await pickFromSession(
-          { tabs, picks },
+          { hosts, picks },
           mcpSessionId(session),
           timeoutMs ?? PICK_TIMEOUT_MS,
         );
@@ -439,7 +490,7 @@ export function registerMcpTools(server: McpServer, runtime: McpToolRuntime): vo
     },
     async ({ session }) => {
       try {
-        await cancelPickInSession({ tabs, picks }, mcpSessionId(session));
+        await cancelPickInSession({ hosts, picks }, mcpSessionId(session));
         return ok("Cancelled the in-page picker.");
       } catch (error) {
         return fail(error);

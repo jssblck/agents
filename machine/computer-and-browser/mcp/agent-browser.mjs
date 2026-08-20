@@ -14,9 +14,9 @@ var __export = (target, all) => {
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
-    for (let key2 of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key2) && key2 !== except)
-        __defProp(to, key2, { get: () => from[key2], enumerable: !(desc = __getOwnPropDesc(from, key2)) || desc.enumerable });
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
   }
   return to;
 };
@@ -165,15 +165,15 @@ var require_code = __commonJS({
       return JSON.stringify(x).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
     }
     exports.safeStringify = safeStringify;
-    function getProperty(key2) {
-      return typeof key2 == "string" && exports.IDENTIFIER.test(key2) ? new _Code(`.${key2}`) : _`[${key2}]`;
+    function getProperty(key) {
+      return typeof key == "string" && exports.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
     }
     exports.getProperty = getProperty;
-    function getEsmExportName(key2) {
-      if (typeof key2 == "string" && exports.IDENTIFIER.test(key2)) {
-        return new _Code(`${key2}`);
+    function getEsmExportName(key) {
+      if (typeof key == "string" && exports.IDENTIFIER.test(key)) {
+        return new _Code(`${key}`);
       }
-      throw new Error(`CodeGen: invalid export name: ${key2}, use explicit $id name mapping`);
+      throw new Error(`CodeGen: invalid export name: ${key}, use explicit $id name mapping`);
     }
     exports.getEsmExportName = getEsmExportName;
     function regexpCode(rx) {
@@ -800,11 +800,11 @@ var require_codegen = __commonJS({
       // returns code for object literal for the passed argument list of key-value pairs
       object(...keyValues) {
         const code = ["{"];
-        for (const [key2, value] of keyValues) {
+        for (const [key, value] of keyValues) {
           if (code.length > 1)
             code.push(",");
-          code.push(key2);
-          if (key2 !== value || this.opts.es5) {
+          code.push(key);
+          if (key !== value || this.opts.es5) {
             code.push(":");
             (0, code_1.addCodeArg)(code, value);
           }
@@ -1079,17 +1079,17 @@ var require_util = __commonJS({
       if (typeof schema === "boolean")
         return;
       const rules = self.RULES.keywords;
-      for (const key2 in schema) {
-        if (!rules[key2])
-          checkStrictMode(it, `unknown keyword: "${key2}"`);
+      for (const key in schema) {
+        if (!rules[key])
+          checkStrictMode(it, `unknown keyword: "${key}"`);
       }
     }
     exports.checkUnknownRules = checkUnknownRules;
     function schemaHasRules(schema, rules) {
       if (typeof schema == "boolean")
         return !schema;
-      for (const key2 in schema)
-        if (rules[key2])
+      for (const key in schema)
+        if (rules[key])
           return true;
       return false;
     }
@@ -1097,8 +1097,8 @@ var require_util = __commonJS({
     function schemaHasRulesButRef(schema, RULES) {
       if (typeof schema == "boolean")
         return !schema;
-      for (const key2 in schema)
-        if (key2 !== "$ref" && RULES.all[key2])
+      for (const key in schema)
+        if (key !== "$ref" && RULES.all[key])
           return true;
       return false;
     }
@@ -1676,8 +1676,8 @@ var require_defaults = __commonJS({
     function assignDefaults(it, ty) {
       const { properties, items } = it.schema;
       if (ty === "object" && properties) {
-        for (const key2 in properties) {
-          assignDefault(it, key2, properties[key2].default);
+        for (const key in properties) {
+          assignDefault(it, key, properties[key].default);
         }
       } else if (ty === "array" && Array.isArray(items)) {
         items.forEach((sch, i) => assignDefault(it, i, sch.default));
@@ -2061,8 +2061,8 @@ var require_fast_deep_equal = __commonJS({
         for (i = length; i-- !== 0; )
           if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
         for (i = length; i-- !== 0; ) {
-          var key2 = keys[i];
-          if (!equal(a[key2], b[key2])) return false;
+          var key = keys[i];
+          if (!equal(a[key], b[key])) return false;
         }
         return true;
       }
@@ -2134,20 +2134,20 @@ var require_json_schema_traverse = __commonJS({
     function _traverse(opts, pre, post, schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex) {
       if (schema && typeof schema == "object" && !Array.isArray(schema)) {
         pre(schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
-        for (var key2 in schema) {
-          var sch = schema[key2];
+        for (var key in schema) {
+          var sch = schema[key];
           if (Array.isArray(sch)) {
-            if (key2 in traverse.arrayKeywords) {
+            if (key in traverse.arrayKeywords) {
               for (var i = 0; i < sch.length; i++)
-                _traverse(opts, pre, post, sch[i], jsonPtr + "/" + key2 + "/" + i, rootSchema, jsonPtr, key2, schema, i);
+                _traverse(opts, pre, post, sch[i], jsonPtr + "/" + key + "/" + i, rootSchema, jsonPtr, key, schema, i);
             }
-          } else if (key2 in traverse.propsKeywords) {
+          } else if (key in traverse.propsKeywords) {
             if (sch && typeof sch == "object") {
               for (var prop in sch)
-                _traverse(opts, pre, post, sch[prop], jsonPtr + "/" + key2 + "/" + escapeJsonPtr(prop), rootSchema, jsonPtr, key2, schema, prop);
+                _traverse(opts, pre, post, sch[prop], jsonPtr + "/" + key + "/" + escapeJsonPtr(prop), rootSchema, jsonPtr, key, schema, prop);
             }
-          } else if (key2 in traverse.keywords || opts.allKeys && !(key2 in traverse.skipKeywords)) {
-            _traverse(opts, pre, post, sch, jsonPtr + "/" + key2, rootSchema, jsonPtr, key2, schema);
+          } else if (key in traverse.keywords || opts.allKeys && !(key in traverse.skipKeywords)) {
+            _traverse(opts, pre, post, sch, jsonPtr + "/" + key, rootSchema, jsonPtr, key, schema);
           }
         }
         post(schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
@@ -2204,10 +2204,10 @@ var require_resolve = __commonJS({
       "$dynamicAnchor"
     ]);
     function hasRef(schema) {
-      for (const key2 in schema) {
-        if (REF_KEYWORDS.has(key2))
+      for (const key in schema) {
+        if (REF_KEYWORDS.has(key))
           return true;
-        const sch = schema[key2];
+        const sch = schema[key];
         if (Array.isArray(sch) && sch.some(hasRef))
           return true;
         if (typeof sch == "object" && hasRef(sch))
@@ -2217,14 +2217,14 @@ var require_resolve = __commonJS({
     }
     function countKeys(schema) {
       let count = 0;
-      for (const key2 in schema) {
-        if (key2 === "$ref")
+      for (const key in schema) {
+        if (key === "$ref")
           return Infinity;
         count++;
-        if (SIMPLE_INLINED.has(key2))
+        if (SIMPLE_INLINED.has(key))
           continue;
-        if (typeof schema[key2] == "object") {
-          (0, util_1.eachItem)(schema[key2], (sch) => count += countKeys(sch));
+        if (typeof schema[key] == "object") {
+          (0, util_1.eachItem)(schema[key], (sch) => count += countKeys(sch));
         }
         if (count === Infinity)
           return Infinity;
@@ -2413,8 +2413,8 @@ var require_validate = __commonJS({
     function schemaCxtHasRules({ schema, self }) {
       if (typeof schema == "boolean")
         return !schema;
-      for (const key2 in schema)
-        if (self.RULES.all[key2])
+      for (const key in schema)
+        if (self.RULES.all[key])
           return true;
       return false;
     }
@@ -4169,7 +4169,7 @@ var require_core = __commonJS({
         }
       }
       // Adds schema to the instance
-      addSchema(schema, key2, _meta, _validateSchema = this.opts.validateSchema) {
+      addSchema(schema, key, _meta, _validateSchema = this.opts.validateSchema) {
         if (Array.isArray(schema)) {
           for (const sch of schema)
             this.addSchema(sch, void 0, _meta, _validateSchema);
@@ -4183,15 +4183,15 @@ var require_core = __commonJS({
             throw new Error(`schema ${schemaId} must be string`);
           }
         }
-        key2 = (0, resolve_1.normalizeId)(key2 || id);
-        this._checkUnique(key2);
-        this.schemas[key2] = this._addSchema(schema, _meta, key2, _validateSchema, true);
+        key = (0, resolve_1.normalizeId)(key || id);
+        this._checkUnique(key);
+        this.schemas[key] = this._addSchema(schema, _meta, key, _validateSchema, true);
         return this;
       }
       // Add schema that will be used to validate other schemas
       // options in META_IGNORE_OPTIONS are alway set to false
-      addMetaSchema(schema, key2, _validateSchema = this.opts.validateSchema) {
-        this.addSchema(schema, key2, true, _validateSchema);
+      addMetaSchema(schema, key, _validateSchema = this.opts.validateSchema) {
+        this.addSchema(schema, key, true, _validateSchema);
         return this;
       }
       //  Validate schema against its meta-schema
@@ -4347,14 +4347,14 @@ var require_core = __commonJS({
           let keywords = metaSchema;
           for (const seg of segments)
             keywords = keywords[seg];
-          for (const key2 in rules) {
-            const rule = rules[key2];
+          for (const key in rules) {
+            const rule = rules[key];
             if (typeof rule != "object")
               continue;
             const { $data } = rule.definition;
-            const schema = keywords[key2];
+            const schema = keywords[key];
             if ($data && schema)
-              keywords[key2] = schemaOrData(schema);
+              keywords[key] = schemaOrData(schema);
           }
         }
         return metaSchema;
@@ -4427,10 +4427,10 @@ var require_core = __commonJS({
     Ajv2.MissingRefError = ref_error_1.default;
     exports.default = Ajv2;
     function checkOptions(checkOpts, options, msg, log2 = "error") {
-      for (const key2 in checkOpts) {
-        const opt = key2;
+      for (const key in checkOpts) {
+        const opt = key;
         if (opt in options)
-          this.logger[log2](`${msg}: option ${key2}. ${checkOpts[opt]}`);
+          this.logger[log2](`${msg}: option ${key}. ${checkOpts[opt]}`);
       }
     }
     function getSchEnv(keyRef) {
@@ -4444,8 +4444,8 @@ var require_core = __commonJS({
       if (Array.isArray(optsSchemas))
         this.addSchema(optsSchemas);
       else
-        for (const key2 in optsSchemas)
-          this.addSchema(optsSchemas[key2], key2);
+        for (const key in optsSchemas)
+          this.addSchema(optsSchemas[key], key);
     }
     function addInitialFormats() {
       for (const name in this.opts.formats) {
@@ -5493,11 +5493,11 @@ var require_dependencies = __commonJS({
     function splitDependencies({ schema }) {
       const propertyDeps = {};
       const schemaDeps = {};
-      for (const key2 in schema) {
-        if (key2 === "__proto__")
+      for (const key in schema) {
+        if (key === "__proto__")
           continue;
-        const deps = Array.isArray(schema[key2]) ? propertyDeps : schemaDeps;
-        deps[key2] = schema[key2];
+        const deps = Array.isArray(schema[key]) ? propertyDeps : schemaDeps;
+        deps[key] = schema[key];
       }
       return [propertyDeps, schemaDeps];
     }
@@ -5574,13 +5574,13 @@ var require_propertyNames = __commonJS({
         if ((0, util_1.alwaysValidSchema)(it, schema))
           return;
         const valid = gen.name("valid");
-        gen.forIn("key", data, (key2) => {
-          cxt.setParams({ propertyName: key2 });
+        gen.forIn("key", data, (key) => {
+          cxt.setParams({ propertyName: key });
           cxt.subschema({
             keyword: "propertyNames",
-            data: key2,
+            data: key,
             dataTypes: ["string"],
-            propertyName: key2,
+            propertyName: key,
             compositeRule: true
           }, valid);
           gen.if((0, codegen_1.not)(valid), () => {
@@ -5629,38 +5629,38 @@ var require_additionalProperties = __commonJS({
         checkAdditionalProperties();
         cxt.ok((0, codegen_1._)`${errsCount} === ${names_1.default.errors}`);
         function checkAdditionalProperties() {
-          gen.forIn("key", data, (key2) => {
+          gen.forIn("key", data, (key) => {
             if (!props.length && !patProps.length)
-              additionalPropertyCode(key2);
+              additionalPropertyCode(key);
             else
-              gen.if(isAdditional(key2), () => additionalPropertyCode(key2));
+              gen.if(isAdditional(key), () => additionalPropertyCode(key));
           });
         }
-        function isAdditional(key2) {
+        function isAdditional(key) {
           let definedProp;
           if (props.length > 8) {
             const propsSchema = (0, util_1.schemaRefOrVal)(it, parentSchema.properties, "properties");
-            definedProp = (0, code_1.isOwnProperty)(gen, propsSchema, key2);
+            definedProp = (0, code_1.isOwnProperty)(gen, propsSchema, key);
           } else if (props.length) {
-            definedProp = (0, codegen_1.or)(...props.map((p) => (0, codegen_1._)`${key2} === ${p}`));
+            definedProp = (0, codegen_1.or)(...props.map((p) => (0, codegen_1._)`${key} === ${p}`));
           } else {
             definedProp = codegen_1.nil;
           }
           if (patProps.length) {
-            definedProp = (0, codegen_1.or)(definedProp, ...patProps.map((p) => (0, codegen_1._)`${(0, code_1.usePattern)(cxt, p)}.test(${key2})`));
+            definedProp = (0, codegen_1.or)(definedProp, ...patProps.map((p) => (0, codegen_1._)`${(0, code_1.usePattern)(cxt, p)}.test(${key})`));
           }
           return (0, codegen_1.not)(definedProp);
         }
-        function deleteAdditional(key2) {
-          gen.code((0, codegen_1._)`delete ${data}[${key2}]`);
+        function deleteAdditional(key) {
+          gen.code((0, codegen_1._)`delete ${data}[${key}]`);
         }
-        function additionalPropertyCode(key2) {
+        function additionalPropertyCode(key) {
           if (opts.removeAdditional === "all" || opts.removeAdditional && schema === false) {
-            deleteAdditional(key2);
+            deleteAdditional(key);
             return;
           }
           if (schema === false) {
-            cxt.setParams({ additionalProperty: key2 });
+            cxt.setParams({ additionalProperty: key });
             cxt.error();
             if (!allErrors)
               gen.break();
@@ -5669,22 +5669,22 @@ var require_additionalProperties = __commonJS({
           if (typeof schema == "object" && !(0, util_1.alwaysValidSchema)(it, schema)) {
             const valid = gen.name("valid");
             if (opts.removeAdditional === "failing") {
-              applyAdditionalSchema(key2, valid, false);
+              applyAdditionalSchema(key, valid, false);
               gen.if((0, codegen_1.not)(valid), () => {
                 cxt.reset();
-                deleteAdditional(key2);
+                deleteAdditional(key);
               });
             } else {
-              applyAdditionalSchema(key2, valid);
+              applyAdditionalSchema(key, valid);
               if (!allErrors)
                 gen.if((0, codegen_1.not)(valid), () => gen.break());
             }
           }
         }
-        function applyAdditionalSchema(key2, valid, errors) {
+        function applyAdditionalSchema(key, valid, errors) {
           const subschema = {
             keyword: "additionalProperties",
-            dataProp: key2,
+            dataProp: key,
             dataPropType: util_1.Type.Str
           };
           if (errors === false) {
@@ -5809,19 +5809,19 @@ var require_patternProperties = __commonJS({
           }
         }
         function validateProperties(pat) {
-          gen.forIn("key", data, (key2) => {
-            gen.if((0, codegen_1._)`${(0, code_1.usePattern)(cxt, pat)}.test(${key2})`, () => {
+          gen.forIn("key", data, (key) => {
+            gen.if((0, codegen_1._)`${(0, code_1.usePattern)(cxt, pat)}.test(${key})`, () => {
               const alwaysValid = alwaysValidPatterns.includes(pat);
               if (!alwaysValid) {
                 cxt.subschema({
                   keyword: "patternProperties",
                   schemaProp: pat,
-                  dataProp: key2,
+                  dataProp: key,
                   dataPropType: util_2.Type.Str
                 }, valid);
               }
               if (it.opts.unevaluated && props !== true) {
-                gen.assign((0, codegen_1._)`${props}[${key2}]`, true);
+                gen.assign((0, codegen_1._)`${props}[${key}]`, true);
               } else if (!alwaysValid && !it.allErrors) {
                 gen.if((0, codegen_1.not)(valid), () => gen.break());
               }
@@ -6912,6 +6912,7 @@ var require_dist = __commonJS({
 });
 
 // src/mcp.ts
+import { readFile as readFile2 } from "node:fs/promises";
 import { join as join3 } from "node:path";
 
 // node_modules/zod/v3/helpers/util.js
@@ -6948,9 +6949,9 @@ var util;
   };
   util2.objectKeys = typeof Object.keys === "function" ? (obj) => Object.keys(obj) : (object3) => {
     const keys = [];
-    for (const key2 in object3) {
-      if (Object.prototype.hasOwnProperty.call(object3, key2)) {
-        keys.push(key2);
+    for (const key in object3) {
+      if (Object.prototype.hasOwnProperty.call(object3, key)) {
+        keys.push(key);
       }
     }
     return keys;
@@ -7342,10 +7343,10 @@ var ParseStatus = class _ParseStatus {
   static async mergeObjectAsync(status, pairs) {
     const syncPairs = [];
     for (const pair of pairs) {
-      const key2 = await pair.key;
+      const key = await pair.key;
       const value = await pair.value;
       syncPairs.push({
-        key: key2,
+        key,
         value
       });
     }
@@ -7354,17 +7355,17 @@ var ParseStatus = class _ParseStatus {
   static mergeObjectSync(status, pairs) {
     const finalObject = {};
     for (const pair of pairs) {
-      const { key: key2, value } = pair;
-      if (key2.status === "aborted")
+      const { key, value } = pair;
+      if (key.status === "aborted")
         return INVALID;
       if (value.status === "aborted")
         return INVALID;
-      if (key2.status === "dirty")
+      if (key.status === "dirty")
         status.dirty();
       if (value.status === "dirty")
         status.dirty();
-      if (key2.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
-        finalObject[key2.value] = value.value;
+      if (key.value !== "__proto__" && (typeof value.value !== "undefined" || pair.alwaysSet)) {
+        finalObject[key.value] = value.value;
       }
     }
     return { status: status.value, value: finalObject };
@@ -7389,12 +7390,12 @@ var errorUtil;
 
 // node_modules/zod/v3/types.js
 var ParseInputLazyPath = class {
-  constructor(parent, value, path, key2) {
+  constructor(parent, value, path, key) {
     this._cachedPath = [];
     this.parent = parent;
     this.data = value;
     this._path = path;
-    this._key = key2;
+    this._key = key;
   }
   get path() {
     if (!this._cachedPath.length) {
@@ -9139,9 +9140,9 @@ ZodArray.create = (schema, params) => {
 function deepPartialify(schema) {
   if (schema instanceof ZodObject) {
     const newShape = {};
-    for (const key2 in schema.shape) {
-      const fieldSchema = schema.shape[key2];
-      newShape[key2] = ZodOptional.create(deepPartialify(fieldSchema));
+    for (const key in schema.shape) {
+      const fieldSchema = schema.shape[key];
+      newShape[key] = ZodOptional.create(deepPartialify(fieldSchema));
     }
     return new ZodObject({
       ...schema._def,
@@ -9192,29 +9193,29 @@ var ZodObject = class _ZodObject extends ZodType {
     const { shape, keys: shapeKeys } = this._getCached();
     const extraKeys = [];
     if (!(this._def.catchall instanceof ZodNever && this._def.unknownKeys === "strip")) {
-      for (const key2 in ctx.data) {
-        if (!shapeKeys.includes(key2)) {
-          extraKeys.push(key2);
+      for (const key in ctx.data) {
+        if (!shapeKeys.includes(key)) {
+          extraKeys.push(key);
         }
       }
     }
     const pairs = [];
-    for (const key2 of shapeKeys) {
-      const keyValidator = shape[key2];
-      const value = ctx.data[key2];
+    for (const key of shapeKeys) {
+      const keyValidator = shape[key];
+      const value = ctx.data[key];
       pairs.push({
-        key: { status: "valid", value: key2 },
-        value: keyValidator._parse(new ParseInputLazyPath(ctx, value, ctx.path, key2)),
-        alwaysSet: key2 in ctx.data
+        key: { status: "valid", value: key },
+        value: keyValidator._parse(new ParseInputLazyPath(ctx, value, ctx.path, key)),
+        alwaysSet: key in ctx.data
       });
     }
     if (this._def.catchall instanceof ZodNever) {
       const unknownKeys = this._def.unknownKeys;
       if (unknownKeys === "passthrough") {
-        for (const key2 of extraKeys) {
+        for (const key of extraKeys) {
           pairs.push({
-            key: { status: "valid", value: key2 },
-            value: { status: "valid", value: ctx.data[key2] }
+            key: { status: "valid", value: key },
+            value: { status: "valid", value: ctx.data[key] }
           });
         }
       } else if (unknownKeys === "strict") {
@@ -9231,15 +9232,15 @@ var ZodObject = class _ZodObject extends ZodType {
       }
     } else {
       const catchall = this._def.catchall;
-      for (const key2 of extraKeys) {
-        const value = ctx.data[key2];
+      for (const key of extraKeys) {
+        const value = ctx.data[key];
         pairs.push({
-          key: { status: "valid", value: key2 },
+          key: { status: "valid", value: key },
           value: catchall._parse(
-            new ParseInputLazyPath(ctx, value, ctx.path, key2)
+            new ParseInputLazyPath(ctx, value, ctx.path, key)
             //, ctx.child(key), value, getParsedType(value)
           ),
-          alwaysSet: key2 in ctx.data
+          alwaysSet: key in ctx.data
         });
       }
     }
@@ -9247,10 +9248,10 @@ var ZodObject = class _ZodObject extends ZodType {
       return Promise.resolve().then(async () => {
         const syncPairs = [];
         for (const pair of pairs) {
-          const key2 = await pair.key;
+          const key = await pair.key;
           const value = await pair.value;
           syncPairs.push({
-            key: key2,
+            key,
             value,
             alwaysSet: pair.alwaysSet
           });
@@ -9375,8 +9376,8 @@ var ZodObject = class _ZodObject extends ZodType {
   //   }) as any;
   //   return merged;
   // }
-  setKey(key2, schema) {
-    return this.augment({ [key2]: schema });
+  setKey(key, schema) {
+    return this.augment({ [key]: schema });
   }
   // merge<Incoming extends AnyZodObject>(
   //   merging: Incoming
@@ -9407,9 +9408,9 @@ var ZodObject = class _ZodObject extends ZodType {
   }
   pick(mask) {
     const shape = {};
-    for (const key2 of util.objectKeys(mask)) {
-      if (mask[key2] && this.shape[key2]) {
-        shape[key2] = this.shape[key2];
+    for (const key of util.objectKeys(mask)) {
+      if (mask[key] && this.shape[key]) {
+        shape[key] = this.shape[key];
       }
     }
     return new _ZodObject({
@@ -9419,9 +9420,9 @@ var ZodObject = class _ZodObject extends ZodType {
   }
   omit(mask) {
     const shape = {};
-    for (const key2 of util.objectKeys(this.shape)) {
-      if (!mask[key2]) {
-        shape[key2] = this.shape[key2];
+    for (const key of util.objectKeys(this.shape)) {
+      if (!mask[key]) {
+        shape[key] = this.shape[key];
       }
     }
     return new _ZodObject({
@@ -9437,12 +9438,12 @@ var ZodObject = class _ZodObject extends ZodType {
   }
   partial(mask) {
     const newShape = {};
-    for (const key2 of util.objectKeys(this.shape)) {
-      const fieldSchema = this.shape[key2];
-      if (mask && !mask[key2]) {
-        newShape[key2] = fieldSchema;
+    for (const key of util.objectKeys(this.shape)) {
+      const fieldSchema = this.shape[key];
+      if (mask && !mask[key]) {
+        newShape[key] = fieldSchema;
       } else {
-        newShape[key2] = fieldSchema.optional();
+        newShape[key] = fieldSchema.optional();
       }
     }
     return new _ZodObject({
@@ -9452,16 +9453,16 @@ var ZodObject = class _ZodObject extends ZodType {
   }
   required(mask) {
     const newShape = {};
-    for (const key2 of util.objectKeys(this.shape)) {
-      if (mask && !mask[key2]) {
-        newShape[key2] = this.shape[key2];
+    for (const key of util.objectKeys(this.shape)) {
+      if (mask && !mask[key]) {
+        newShape[key] = this.shape[key];
       } else {
-        const fieldSchema = this.shape[key2];
+        const fieldSchema = this.shape[key];
         let newField = fieldSchema;
         while (newField instanceof ZodOptional) {
           newField = newField._def.innerType;
         }
-        newShape[key2] = newField;
+        newShape[key] = newField;
       }
     }
     return new _ZodObject({
@@ -9705,14 +9706,14 @@ function mergeValues(a, b) {
     return { valid: true, data: a };
   } else if (aType === ZodParsedType.object && bType === ZodParsedType.object) {
     const bKeys = util.objectKeys(b);
-    const sharedKeys = util.objectKeys(a).filter((key2) => bKeys.indexOf(key2) !== -1);
+    const sharedKeys = util.objectKeys(a).filter((key) => bKeys.indexOf(key) !== -1);
     const newObj = { ...a, ...b };
-    for (const key2 of sharedKeys) {
-      const sharedValue = mergeValues(a[key2], b[key2]);
+    for (const key of sharedKeys) {
+      const sharedValue = mergeValues(a[key], b[key]);
       if (!sharedValue.valid) {
         return { valid: false };
       }
-      newObj[key2] = sharedValue.data;
+      newObj[key] = sharedValue.data;
     }
     return { valid: true, data: newObj };
   } else if (aType === ZodParsedType.array && bType === ZodParsedType.array) {
@@ -9876,11 +9877,11 @@ var ZodRecord = class _ZodRecord extends ZodType {
     const pairs = [];
     const keyType = this._def.keyType;
     const valueType = this._def.valueType;
-    for (const key2 in ctx.data) {
+    for (const key in ctx.data) {
       pairs.push({
-        key: keyType._parse(new ParseInputLazyPath(ctx, key2, ctx.path, key2)),
-        value: valueType._parse(new ParseInputLazyPath(ctx, ctx.data[key2], ctx.path, key2)),
-        alwaysSet: key2 in ctx.data
+        key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, key)),
+        value: valueType._parse(new ParseInputLazyPath(ctx, ctx.data[key], ctx.path, key)),
+        alwaysSet: key in ctx.data
       });
     }
     if (ctx.common.async) {
@@ -9928,9 +9929,9 @@ var ZodMap = class extends ZodType {
     }
     const keyType = this._def.keyType;
     const valueType = this._def.valueType;
-    const pairs = [...ctx.data.entries()].map(([key2, value], index) => {
+    const pairs = [...ctx.data.entries()].map(([key, value], index) => {
       return {
-        key: keyType._parse(new ParseInputLazyPath(ctx, key2, ctx.path, [index, "key"])),
+        key: keyType._parse(new ParseInputLazyPath(ctx, key, ctx.path, [index, "key"])),
         value: valueType._parse(new ParseInputLazyPath(ctx, value, ctx.path, [index, "value"]))
       };
     });
@@ -9938,30 +9939,30 @@ var ZodMap = class extends ZodType {
       const finalMap = /* @__PURE__ */ new Map();
       return Promise.resolve().then(async () => {
         for (const pair of pairs) {
-          const key2 = await pair.key;
+          const key = await pair.key;
           const value = await pair.value;
-          if (key2.status === "aborted" || value.status === "aborted") {
+          if (key.status === "aborted" || value.status === "aborted") {
             return INVALID;
           }
-          if (key2.status === "dirty" || value.status === "dirty") {
+          if (key.status === "dirty" || value.status === "dirty") {
             status.dirty();
           }
-          finalMap.set(key2.value, value.value);
+          finalMap.set(key.value, value.value);
         }
         return { status: status.value, value: finalMap };
       });
     } else {
       const finalMap = /* @__PURE__ */ new Map();
       for (const pair of pairs) {
-        const key2 = pair.key;
+        const key = pair.key;
         const value = pair.value;
-        if (key2.status === "aborted" || value.status === "aborted") {
+        if (key.status === "aborted" || value.status === "aborted") {
           return INVALID;
         }
-        if (key2.status === "dirty" || value.status === "dirty") {
+        if (key.status === "dirty" || value.status === "dirty") {
           status.dirty();
         }
-        finalMap.set(key2.value, value.value);
+        finalMap.set(key.value, value.value);
       }
       return { status: status.value, value: finalMap };
     }
@@ -11270,9 +11271,9 @@ function floatSafeRemainder2(val, step) {
   return ratio - roundedRatio;
 }
 var EVALUATING = /* @__PURE__ */ Symbol("evaluating");
-function defineLazy(object3, key2, getter) {
+function defineLazy(object3, key, getter) {
   let value = void 0;
-  Object.defineProperty(object3, key2, {
+  Object.defineProperty(object3, key, {
     get() {
       if (value === EVALUATING) {
         return void 0;
@@ -11284,7 +11285,7 @@ function defineLazy(object3, key2, getter) {
       return value;
     },
     set(v) {
-      Object.defineProperty(object3, key2, {
+      Object.defineProperty(object3, key, {
         value: v
         // configurable: true,
       });
@@ -11317,11 +11318,11 @@ function cloneDef(schema) {
 function getElementAtPath(obj, path) {
   if (!path)
     return obj;
-  return path.reduce((acc, key2) => acc?.[key2], obj);
+  return path.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
-  const promises = keys.map((key2) => promisesObj[key2]);
+  const promises = keys.map((key) => promisesObj[key]);
   return Promise.all(promises).then((results) => {
     const resolvedObj = {};
     for (let i = 0; i < keys.length; i++) {
@@ -11393,8 +11394,8 @@ function shallowClone(o) {
 }
 function numKeys(data) {
   let keyCount = 0;
-  for (const key2 in data) {
-    if (Object.prototype.hasOwnProperty.call(data, key2)) {
+  for (const key in data) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
       keyCount++;
     }
   }
@@ -11544,13 +11545,13 @@ function pick(schema, mask) {
   const def = mergeDefs(schema._zod.def, {
     get shape() {
       const newShape = {};
-      for (const key2 in mask) {
-        if (!(key2 in currDef.shape)) {
-          throw new Error(`Unrecognized key: "${key2}"`);
+      for (const key in mask) {
+        if (!(key in currDef.shape)) {
+          throw new Error(`Unrecognized key: "${key}"`);
         }
-        if (!mask[key2])
+        if (!mask[key])
           continue;
-        newShape[key2] = currDef.shape[key2];
+        newShape[key] = currDef.shape[key];
       }
       assignProp(this, "shape", newShape);
       return newShape;
@@ -11569,13 +11570,13 @@ function omit(schema, mask) {
   const def = mergeDefs(schema._zod.def, {
     get shape() {
       const newShape = { ...schema._zod.def.shape };
-      for (const key2 in mask) {
-        if (!(key2 in currDef.shape)) {
-          throw new Error(`Unrecognized key: "${key2}"`);
+      for (const key in mask) {
+        if (!(key in currDef.shape)) {
+          throw new Error(`Unrecognized key: "${key}"`);
         }
-        if (!mask[key2])
+        if (!mask[key])
           continue;
-        delete newShape[key2];
+        delete newShape[key];
       }
       assignProp(this, "shape", newShape);
       return newShape;
@@ -11592,8 +11593,8 @@ function extend(schema, shape) {
   const hasChecks = checks && checks.length > 0;
   if (hasChecks) {
     const existingShape = schema._zod.def.shape;
-    for (const key2 in shape) {
-      if (Object.getOwnPropertyDescriptor(existingShape, key2) !== void 0) {
+    for (const key in shape) {
+      if (Object.getOwnPropertyDescriptor(existingShape, key) !== void 0) {
         throw new Error("Cannot overwrite keys on object schemas containing refinements. Use `.safeExtend()` instead.");
       }
     }
@@ -11649,23 +11650,23 @@ function partial(Class2, schema, mask) {
       const oldShape = schema._zod.def.shape;
       const shape = { ...oldShape };
       if (mask) {
-        for (const key2 in mask) {
-          if (!(key2 in oldShape)) {
-            throw new Error(`Unrecognized key: "${key2}"`);
+        for (const key in mask) {
+          if (!(key in oldShape)) {
+            throw new Error(`Unrecognized key: "${key}"`);
           }
-          if (!mask[key2])
+          if (!mask[key])
             continue;
-          shape[key2] = Class2 ? new Class2({
+          shape[key] = Class2 ? new Class2({
             type: "optional",
-            innerType: oldShape[key2]
-          }) : oldShape[key2];
+            innerType: oldShape[key]
+          }) : oldShape[key];
         }
       } else {
-        for (const key2 in oldShape) {
-          shape[key2] = Class2 ? new Class2({
+        for (const key in oldShape) {
+          shape[key] = Class2 ? new Class2({
             type: "optional",
-            innerType: oldShape[key2]
-          }) : oldShape[key2];
+            innerType: oldShape[key]
+          }) : oldShape[key];
         }
       }
       assignProp(this, "shape", shape);
@@ -11681,22 +11682,22 @@ function required(Class2, schema, mask) {
       const oldShape = schema._zod.def.shape;
       const shape = { ...oldShape };
       if (mask) {
-        for (const key2 in mask) {
-          if (!(key2 in shape)) {
-            throw new Error(`Unrecognized key: "${key2}"`);
+        for (const key in mask) {
+          if (!(key in shape)) {
+            throw new Error(`Unrecognized key: "${key}"`);
           }
-          if (!mask[key2])
+          if (!mask[key])
             continue;
-          shape[key2] = new Class2({
+          shape[key] = new Class2({
             type: "nonoptional",
-            innerType: oldShape[key2]
+            innerType: oldShape[key]
           });
         }
       } else {
-        for (const key2 in oldShape) {
-          shape[key2] = new Class2({
+        for (const key in oldShape) {
+          shape[key] = new Class2({
             type: "nonoptional",
-            innerType: oldShape[key2]
+            innerType: oldShape[key]
           });
         }
       }
@@ -13477,13 +13478,13 @@ var $ZodArray = /* @__PURE__ */ $constructor("$ZodArray", (inst, def) => {
     return payload;
   };
 });
-function handlePropertyResult(result, final, key2, input, isOptionalIn, isOptionalOut) {
-  const isPresent = key2 in input;
+function handlePropertyResult(result, final, key, input, isOptionalIn, isOptionalOut) {
+  const isPresent = key in input;
   if (result.issues.length) {
     if (isOptionalIn && isOptionalOut && !isPresent) {
       return;
     }
-    final.issues.push(...prefixIssues(key2, result.issues));
+    final.issues.push(...prefixIssues(key, result.issues));
   }
   if (!isPresent && !isOptionalIn) {
     if (!result.issues.length) {
@@ -13491,17 +13492,17 @@ function handlePropertyResult(result, final, key2, input, isOptionalIn, isOption
         code: "invalid_type",
         expected: "nonoptional",
         input: void 0,
-        path: [key2]
+        path: [key]
       });
     }
     return;
   }
   if (result.value === void 0) {
     if (isPresent) {
-      final.value[key2] = void 0;
+      final.value[key] = void 0;
     }
   } else {
-    final.value[key2] = result.value;
+    final.value[key] = result.value;
   }
 }
 function normalizeDef(def) {
@@ -13527,20 +13528,20 @@ function handleCatchall(proms, input, payload, ctx, def, inst) {
   const t = _catchall.def.type;
   const isOptionalIn = _catchall.optin === "optional";
   const isOptionalOut = _catchall.optout === "optional";
-  for (const key2 in input) {
-    if (key2 === "__proto__")
+  for (const key in input) {
+    if (key === "__proto__")
       continue;
-    if (keySet.has(key2))
+    if (keySet.has(key))
       continue;
     if (t === "never") {
-      unrecognized.push(key2);
+      unrecognized.push(key);
       continue;
     }
-    const r = _catchall.run({ value: input[key2], issues: [] }, ctx);
+    const r = _catchall.run({ value: input[key], issues: [] }, ctx);
     if (r instanceof Promise) {
-      proms.push(r.then((r2) => handlePropertyResult(r2, payload, key2, input, isOptionalIn, isOptionalOut)));
+      proms.push(r.then((r2) => handlePropertyResult(r2, payload, key, input, isOptionalIn, isOptionalOut)));
     } else {
-      handlePropertyResult(r, payload, key2, input, isOptionalIn, isOptionalOut);
+      handlePropertyResult(r, payload, key, input, isOptionalIn, isOptionalOut);
     }
   }
   if (unrecognized.length) {
@@ -13576,12 +13577,12 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
   defineLazy(inst._zod, "propValues", () => {
     const shape = def.shape;
     const propValues = {};
-    for (const key2 in shape) {
-      const field = shape[key2]._zod;
+    for (const key in shape) {
+      const field = shape[key]._zod;
       if (field.values) {
-        propValues[key2] ?? (propValues[key2] = /* @__PURE__ */ new Set());
+        propValues[key] ?? (propValues[key] = /* @__PURE__ */ new Set());
         for (const v of field.values)
-          propValues[key2].add(v);
+          propValues[key].add(v);
       }
     }
     return propValues;
@@ -13604,15 +13605,15 @@ var $ZodObject = /* @__PURE__ */ $constructor("$ZodObject", (inst, def) => {
     payload.value = {};
     const proms = [];
     const shape = value.shape;
-    for (const key2 of value.keys) {
-      const el = shape[key2];
+    for (const key of value.keys) {
+      const el = shape[key];
       const isOptionalIn = el._zod.optin === "optional";
       const isOptionalOut = el._zod.optout === "optional";
-      const r = el._zod.run({ value: input[key2], issues: [] }, ctx);
+      const r = el._zod.run({ value: input[key], issues: [] }, ctx);
       if (r instanceof Promise) {
-        proms.push(r.then((r2) => handlePropertyResult(r2, payload, key2, input, isOptionalIn, isOptionalOut)));
+        proms.push(r.then((r2) => handlePropertyResult(r2, payload, key, input, isOptionalIn, isOptionalOut)));
       } else {
-        handlePropertyResult(r, payload, key2, input, isOptionalIn, isOptionalOut);
+        handlePropertyResult(r, payload, key, input, isOptionalIn, isOptionalOut);
       }
     }
     if (!catchall) {
@@ -13628,24 +13629,24 @@ var $ZodObjectJIT = /* @__PURE__ */ $constructor("$ZodObjectJIT", (inst, def) =>
   const generateFastpass = (shape) => {
     const doc = new Doc(["shape", "payload", "ctx"]);
     const normalized = _normalized.value;
-    const parseStr = (key2) => {
-      const k = esc(key2);
+    const parseStr = (key) => {
+      const k = esc(key);
       return `shape[${k}]._zod.run({ value: input[${k}], issues: [] }, ctx)`;
     };
     doc.write(`const input = payload.value;`);
     const ids = /* @__PURE__ */ Object.create(null);
     let counter = 0;
-    for (const key2 of normalized.keys) {
-      ids[key2] = `key_${counter++}`;
+    for (const key of normalized.keys) {
+      ids[key] = `key_${counter++}`;
     }
     doc.write(`const newResult = {};`);
-    for (const key2 of normalized.keys) {
-      const id = ids[key2];
-      const k = esc(key2);
-      const schema = shape[key2];
+    for (const key of normalized.keys) {
+      const id = ids[key];
+      const k = esc(key);
+      const schema = shape[key];
       const isOptionalIn = schema?._zod?.optin === "optional";
       const isOptionalOut = schema?._zod?.optout === "optional";
-      doc.write(`const ${id} = ${parseStr(key2)};`);
+      doc.write(`const ${id} = ${parseStr(key)};`);
       if (isOptionalIn && isOptionalOut) {
         doc.write(`
         if (${id}.issues.length) {
@@ -13957,17 +13958,17 @@ function mergeValues2(a, b) {
   }
   if (isPlainObject(a) && isPlainObject(b)) {
     const bKeys = Object.keys(b);
-    const sharedKeys = Object.keys(a).filter((key2) => bKeys.indexOf(key2) !== -1);
+    const sharedKeys = Object.keys(a).filter((key) => bKeys.indexOf(key) !== -1);
     const newObj = { ...a, ...b };
-    for (const key2 of sharedKeys) {
-      const sharedValue = mergeValues2(a[key2], b[key2]);
+    for (const key of sharedKeys) {
+      const sharedValue = mergeValues2(a[key], b[key]);
       if (!sharedValue.valid) {
         return {
           valid: false,
-          mergeErrorPath: [key2, ...sharedValue.mergeErrorPath]
+          mergeErrorPath: [key, ...sharedValue.mergeErrorPath]
         };
       }
-      newObj[key2] = sharedValue.data;
+      newObj[key] = sharedValue.data;
     }
     return { valid: true, data: newObj };
   }
@@ -14102,9 +14103,9 @@ var $ZodTuple = /* @__PURE__ */ $constructor("$ZodTuple", (inst, def) => {
     return handleTupleResults(itemResults, payload, items, input, optoutStart);
   };
 });
-function getTupleOptStart(items, key2) {
+function getTupleOptStart(items, key) {
   for (let i = items.length - 1; i >= 0; i--) {
-    if (items[i]._zod[key2] !== "optional")
+    if (items[i]._zod[key] !== "optional")
       return i + 1;
   }
   return 0;
@@ -14155,10 +14156,10 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
     if (values) {
       payload.value = {};
       const recordKeys = /* @__PURE__ */ new Set();
-      for (const key2 of values) {
-        if (typeof key2 === "string" || typeof key2 === "number" || typeof key2 === "symbol") {
-          recordKeys.add(typeof key2 === "number" ? key2.toString() : key2);
-          const keyResult = def.keyType._zod.run({ value: key2, issues: [] }, ctx);
+      for (const key of values) {
+        if (typeof key === "string" || typeof key === "number" || typeof key === "symbol") {
+          recordKeys.add(typeof key === "number" ? key.toString() : key);
+          const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
           if (keyResult instanceof Promise) {
             throw new Error("Async schemas not supported in object keys currently");
           }
@@ -14167,34 +14168,34 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
               code: "invalid_key",
               origin: "record",
               issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
-              input: key2,
-              path: [key2],
+              input: key,
+              path: [key],
               inst
             });
             continue;
           }
           const outKey = keyResult.value;
-          const result = def.valueType._zod.run({ value: input[key2], issues: [] }, ctx);
+          const result = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
           if (result instanceof Promise) {
             proms.push(result.then((result2) => {
               if (result2.issues.length) {
-                payload.issues.push(...prefixIssues(key2, result2.issues));
+                payload.issues.push(...prefixIssues(key, result2.issues));
               }
               payload.value[outKey] = result2.value;
             }));
           } else {
             if (result.issues.length) {
-              payload.issues.push(...prefixIssues(key2, result.issues));
+              payload.issues.push(...prefixIssues(key, result.issues));
             }
             payload.value[outKey] = result.value;
           }
         }
       }
       let unrecognized;
-      for (const key2 in input) {
-        if (!recordKeys.has(key2)) {
+      for (const key in input) {
+        if (!recordKeys.has(key)) {
           unrecognized = unrecognized ?? [];
-          unrecognized.push(key2);
+          unrecognized.push(key);
         }
       }
       if (unrecognized && unrecognized.length > 0) {
@@ -14207,18 +14208,18 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
       }
     } else {
       payload.value = {};
-      for (const key2 of Reflect.ownKeys(input)) {
-        if (key2 === "__proto__")
+      for (const key of Reflect.ownKeys(input)) {
+        if (key === "__proto__")
           continue;
-        if (!Object.prototype.propertyIsEnumerable.call(input, key2))
+        if (!Object.prototype.propertyIsEnumerable.call(input, key))
           continue;
-        let keyResult = def.keyType._zod.run({ value: key2, issues: [] }, ctx);
+        let keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
         if (keyResult instanceof Promise) {
           throw new Error("Async schemas not supported in object keys currently");
         }
-        const checkNumericKey = typeof key2 === "string" && number.test(key2) && keyResult.issues.length;
+        const checkNumericKey = typeof key === "string" && number.test(key) && keyResult.issues.length;
         if (checkNumericKey) {
-          const retryResult = def.keyType._zod.run({ value: Number(key2), issues: [] }, ctx);
+          const retryResult = def.keyType._zod.run({ value: Number(key), issues: [] }, ctx);
           if (retryResult instanceof Promise) {
             throw new Error("Async schemas not supported in object keys currently");
           }
@@ -14228,30 +14229,30 @@ var $ZodRecord = /* @__PURE__ */ $constructor("$ZodRecord", (inst, def) => {
         }
         if (keyResult.issues.length) {
           if (def.mode === "loose") {
-            payload.value[key2] = input[key2];
+            payload.value[key] = input[key];
           } else {
             payload.issues.push({
               code: "invalid_key",
               origin: "record",
               issues: keyResult.issues.map((iss) => finalizeIssue(iss, ctx, config())),
-              input: key2,
-              path: [key2],
+              input: key,
+              path: [key],
               inst
             });
           }
           continue;
         }
-        const result = def.valueType._zod.run({ value: input[key2], issues: [] }, ctx);
+        const result = def.valueType._zod.run({ value: input[key], issues: [] }, ctx);
         if (result instanceof Promise) {
           proms.push(result.then((result2) => {
             if (result2.issues.length) {
-              payload.issues.push(...prefixIssues(key2, result2.issues));
+              payload.issues.push(...prefixIssues(key, result2.issues));
             }
             payload.value[keyResult.value] = result2.value;
           }));
         } else {
           if (result.issues.length) {
-            payload.issues.push(...prefixIssues(key2, result.issues));
+            payload.issues.push(...prefixIssues(key, result.issues));
           }
           payload.value[keyResult.value] = result.value;
         }
@@ -14278,15 +14279,15 @@ var $ZodMap = /* @__PURE__ */ $constructor("$ZodMap", (inst, def) => {
     }
     const proms = [];
     payload.value = /* @__PURE__ */ new Map();
-    for (const [key2, value] of input) {
-      const keyResult = def.keyType._zod.run({ value: key2, issues: [] }, ctx);
+    for (const [key, value] of input) {
+      const keyResult = def.keyType._zod.run({ value: key, issues: [] }, ctx);
       const valueResult = def.valueType._zod.run({ value, issues: [] }, ctx);
       if (keyResult instanceof Promise || valueResult instanceof Promise) {
         proms.push(Promise.all([keyResult, valueResult]).then(([keyResult2, valueResult2]) => {
-          handleMapResult(keyResult2, valueResult2, payload, key2, input, inst, ctx);
+          handleMapResult(keyResult2, valueResult2, payload, key, input, inst, ctx);
         }));
       } else {
-        handleMapResult(keyResult, valueResult, payload, key2, input, inst, ctx);
+        handleMapResult(keyResult, valueResult, payload, key, input, inst, ctx);
       }
     }
     if (proms.length)
@@ -14294,10 +14295,10 @@ var $ZodMap = /* @__PURE__ */ $constructor("$ZodMap", (inst, def) => {
     return payload;
   };
 });
-function handleMapResult(keyResult, valueResult, final, key2, input, inst, ctx) {
+function handleMapResult(keyResult, valueResult, final, key, input, inst, ctx) {
   if (keyResult.issues.length) {
-    if (propertyKeyTypes.has(typeof key2)) {
-      final.issues.push(...prefixIssues(key2, keyResult.issues));
+    if (propertyKeyTypes.has(typeof key)) {
+      final.issues.push(...prefixIssues(key, keyResult.issues));
     } else {
       final.issues.push({
         code: "invalid_key",
@@ -14309,15 +14310,15 @@ function handleMapResult(keyResult, valueResult, final, key2, input, inst, ctx) 
     }
   }
   if (valueResult.issues.length) {
-    if (propertyKeyTypes.has(typeof key2)) {
-      final.issues.push(...prefixIssues(key2, valueResult.issues));
+    if (propertyKeyTypes.has(typeof key)) {
+      final.issues.push(...prefixIssues(key, valueResult.issues));
     } else {
       final.issues.push({
         origin: "map",
         code: "invalid_element",
         input,
         inst,
-        key: key2,
+        key,
         issues: valueResult.issues.map((iss) => finalizeIssue(iss, ctx, config()))
       });
     }
@@ -22078,8 +22079,8 @@ function extractDefs(ctx, schema) {
     if (defId)
       seen.defId = defId;
     const schema2 = seen.schema;
-    for (const key2 in schema2) {
-      delete schema2[key2];
+    for (const key in schema2) {
+      delete schema2[key];
     }
     schema2.$ref = ref;
   };
@@ -22148,20 +22149,20 @@ function finalize(ctx, schema) {
       Object.assign(schema2, _cached);
       const isParentRef = zodSchema._zod.parent === ref;
       if (isParentRef) {
-        for (const key2 in schema2) {
-          if (key2 === "$ref" || key2 === "allOf")
+        for (const key in schema2) {
+          if (key === "$ref" || key === "allOf")
             continue;
-          if (!(key2 in _cached)) {
-            delete schema2[key2];
+          if (!(key in _cached)) {
+            delete schema2[key];
           }
         }
       }
       if (refSchema.$ref && refSeen.def) {
-        for (const key2 in schema2) {
-          if (key2 === "$ref" || key2 === "allOf")
+        for (const key in schema2) {
+          if (key === "$ref" || key === "allOf")
             continue;
-          if (key2 in refSeen.def && JSON.stringify(schema2[key2]) === JSON.stringify(refSeen.def[key2])) {
-            delete schema2[key2];
+          if (key in refSeen.def && JSON.stringify(schema2[key]) === JSON.stringify(refSeen.def[key])) {
+            delete schema2[key];
           }
         }
       }
@@ -22173,11 +22174,11 @@ function finalize(ctx, schema) {
       if (parentSeen?.schema.$ref) {
         schema2.$ref = parentSeen.schema.$ref;
         if (parentSeen.def) {
-          for (const key2 in schema2) {
-            if (key2 === "$ref" || key2 === "allOf")
+          for (const key in schema2) {
+            if (key === "$ref" || key === "allOf")
               continue;
-            if (key2 in parentSeen.def && JSON.stringify(schema2[key2]) === JSON.stringify(parentSeen.def[key2])) {
-              delete schema2[key2];
+            if (key in parentSeen.def && JSON.stringify(schema2[key]) === JSON.stringify(parentSeen.def[key])) {
+              delete schema2[key];
             }
           }
         }
@@ -22278,8 +22279,8 @@ function isTransforming(_schema, _ctx) {
     return isTransforming(def.in, ctx) || isTransforming(def.out, ctx);
   }
   if (def.type === "object") {
-    for (const key2 in def.shape) {
-      if (isTransforming(def.shape[key2], ctx))
+    for (const key in def.shape) {
+      if (isTransforming(def.shape[key], ctx))
         return true;
     }
     return false;
@@ -22568,15 +22569,15 @@ var objectProcessor = (schema, ctx, _json, params) => {
   json2.type = "object";
   json2.properties = {};
   const shape = def.shape;
-  for (const key2 in shape) {
-    json2.properties[key2] = process2(shape[key2], ctx, {
+  for (const key in shape) {
+    json2.properties[key] = process2(shape[key], ctx, {
       ...params,
-      path: [...params.path, "properties", key2]
+      path: [...params.path, "properties", key]
     });
   }
   const allKeys = new Set(Object.keys(shape));
-  const requiredKeys = new Set([...allKeys].filter((key2) => {
-    const v = def.shape[key2]._zod;
+  const requiredKeys = new Set([...allKeys].filter((key) => {
+    const v = def.shape[key]._zod;
     if (ctx.io === "input") {
       return v.optin === void 0;
     } else {
@@ -22842,9 +22843,9 @@ function toJSONSchema(input, params) {
     };
     ctx2.external = external;
     for (const entry of registry2._idmap.entries()) {
-      const [key2, schema] = entry;
+      const [key, schema] = entry;
       extractDefs(ctx2, schema);
-      schemas[key2] = finalize(ctx2, schema);
+      schemas[key] = finalize(ctx2, schema);
     }
     if (Object.keys(defs).length > 0) {
       const defsSegment = ctx2.target === "draft-2020-12" ? "$defs" : "definitions";
@@ -23699,14 +23700,14 @@ function _installLazyMethods(inst, group, methods) {
   if (installed.has(group))
     return;
   installed.add(group);
-  for (const key2 in methods) {
-    const fn = methods[key2];
-    Object.defineProperty(proto, key2, {
+  for (const key in methods) {
+    const fn = methods[key];
+    Object.defineProperty(proto, key, {
       configurable: true,
       enumerable: false,
       get() {
         const bound = fn.bind(this);
-        Object.defineProperty(this, key2, {
+        Object.defineProperty(this, key, {
           configurable: true,
           writable: true,
           enumerable: true,
@@ -23715,7 +23716,7 @@ function _installLazyMethods(inst, group, methods) {
         return bound;
       },
       set(v) {
-        Object.defineProperty(this, key2, {
+        Object.defineProperty(this, key, {
           configurable: true,
           writable: true,
           enumerable: true,
@@ -25103,11 +25104,11 @@ function resolveRef(ref, ctx) {
   }
   const defsKey = ctx.version === "draft-2020-12" ? "$defs" : "definitions";
   if (path[0] === defsKey) {
-    const key2 = path[1];
-    if (!key2 || !ctx.defs[key2]) {
+    const key = path[1];
+    if (!key || !ctx.defs[key]) {
       throw new Error(`Reference not found: ${ref}`);
     }
-    return ctx.defs[key2];
+    return ctx.defs[key];
   }
   throw new Error(`Reference not found: ${ref}`);
 }
@@ -25293,9 +25294,9 @@ function convertBaseSchema(schema, ctx) {
       const shape = {};
       const properties = schema.properties || {};
       const requiredSet = new Set(schema.required || []);
-      for (const [key2, propSchema] of Object.entries(properties)) {
+      for (const [key, propSchema] of Object.entries(properties)) {
         const propZodSchema = convertSchema(propSchema, ctx);
-        shape[key2] = requiredSet.has(key2) ? propZodSchema : propZodSchema.optional();
+        shape[key] = requiredSet.has(key) ? propZodSchema : propZodSchema.optional();
       }
       if (schema.propertyNames) {
         const keySchema = convertSchema(schema.propertyNames, ctx);
@@ -25436,20 +25437,20 @@ function convertSchema(schema, ctx) {
   }
   const extraMeta = {};
   const coreMetadataKeys = ["$id", "id", "$comment", "$anchor", "$vocabulary", "$dynamicRef", "$dynamicAnchor"];
-  for (const key2 of coreMetadataKeys) {
-    if (key2 in schema) {
-      extraMeta[key2] = schema[key2];
+  for (const key of coreMetadataKeys) {
+    if (key in schema) {
+      extraMeta[key] = schema[key];
     }
   }
   const contentMetadataKeys = ["contentEncoding", "contentMediaType", "contentSchema"];
-  for (const key2 of contentMetadataKeys) {
-    if (key2 in schema) {
-      extraMeta[key2] = schema[key2];
+  for (const key of contentMetadataKeys) {
+    if (key in schema) {
+      extraMeta[key] = schema[key];
     }
   }
-  for (const key2 of Object.keys(schema)) {
-    if (!RECOGNIZED_KEYS.has(key2)) {
-      extraMeta[key2] = schema[key2];
+  for (const key of Object.keys(schema)) {
+    if (!RECOGNIZED_KEYS.has(key)) {
+      extraMeta[key] = schema[key];
     }
   }
   if (Object.keys(extraMeta).length > 0) {
@@ -27103,19 +27104,19 @@ var getRefs = (options) => {
 };
 
 // node_modules/zod-to-json-schema/dist/esm/errorMessages.js
-function addErrorMessage(res, key2, errorMessage, refs) {
+function addErrorMessage(res, key, errorMessage, refs) {
   if (!refs?.errorMessages)
     return;
   if (errorMessage) {
     res.errorMessage = {
       ...res.errorMessage,
-      [key2]: errorMessage
+      [key]: errorMessage
     };
   }
 }
-function setResponseValueAndErrors(res, key2, value, errorMessage, refs) {
-  res[key2] = value;
-  addErrorMessage(res, key2, errorMessage, refs);
+function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
+  res[key] = value;
+  addErrorMessage(res, key, errorMessage, refs);
 }
 
 // node_modules/zod-to-json-schema/dist/esm/getRelativePath.js
@@ -27707,11 +27708,11 @@ function parseRecordDef(def, refs) {
     return {
       type: "object",
       required: def.keyType._def.values,
-      properties: def.keyType._def.values.reduce((acc, key2) => ({
+      properties: def.keyType._def.values.reduce((acc, key) => ({
         ...acc,
-        [key2]: parseDef(def.valueType._def, {
+        [key]: parseDef(def.valueType._def, {
           ...refs,
-          currentPath: [...refs.currentPath, "properties", key2]
+          currentPath: [...refs.currentPath, "properties", key]
         }) ?? parseAnyDef(refs)
       }), {}),
       additionalProperties: refs.rejectedAdditionalProperties
@@ -27778,10 +27779,10 @@ function parseMapDef(def, refs) {
 // node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
 function parseNativeEnumDef(def) {
   const object3 = def.values;
-  const actualKeys = Object.keys(def.values).filter((key2) => {
-    return typeof object3[object3[key2]] !== "number";
+  const actualKeys = Object.keys(def.values).filter((key) => {
+    return typeof object3[object3[key]] !== "number";
   });
-  const actualValues = actualKeys.map((key2) => object3[key2]);
+  const actualValues = actualKeys.map((key) => object3[key]);
   const parsedTypes = Array.from(new Set(actualValues.map((values) => typeof values)));
   return {
     type: parsedTypes.length === 1 ? parsedTypes[0] === "string" ? "string" : "number" : ["string", "number"],
@@ -29312,8 +29313,8 @@ function isPlainObject2(value) {
 }
 function mergeCapabilities(base, additional) {
   const result = { ...base };
-  for (const key2 in additional) {
-    const k = key2;
+  for (const key in additional) {
+    const k = key;
     const addValue = additional[k];
     if (addValue === void 0)
       continue;
@@ -31000,178 +31001,148 @@ var StdioServerTransport = class {
   }
 };
 
-// src/bridge.ts
-import { createServer } from "node:net";
-import { mkdir, readdir, rename, rm, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
+// src/hosts.ts
+import { readdir } from "node:fs/promises";
+import { connect } from "node:net";
+import { join } from "node:path";
 var DEFAULT_TIMEOUT_MS = 3e4;
+var HELLO_TIMEOUT_MS = 3e3;
+var SOCKET_PATTERN = /^host-\d+\.sock$/;
 var Connection = class {
   id;
-  connectedAt = Date.now();
   version = "unknown";
+  ready;
+  closed = false;
   #socket;
   #pending = /* @__PURE__ */ new Map();
   #nextId = 1;
   #buffer = "";
-  constructor(id, socket) {
+  constructor(id, path, onClose) {
     this.id = id;
-    this.#socket = socket;
-  }
-  handleData(chunk, onHello) {
-    this.#buffer += chunk.toString("utf8");
-    let newline = this.#buffer.indexOf("\n");
-    while (newline !== -1) {
-      const line = this.#buffer.slice(0, newline).trim();
-      this.#buffer = this.#buffer.slice(newline + 1);
-      if (line) this.#handleMessage(line, onHello);
-      newline = this.#buffer.indexOf("\n");
-    }
-  }
-  #handleMessage(line, onHello) {
-    let message;
-    try {
-      message = JSON.parse(line);
-    } catch {
-      return;
-    }
-    if (message.type === "hello") {
-      this.version = String(message.version ?? "unknown");
-      onHello();
-      return;
-    }
-    if (message.type !== "response") return;
-    const pending = this.#pending.get(Number(message.id));
-    if (!pending) return;
-    this.#pending.delete(Number(message.id));
-    clearTimeout(pending.timer);
-    if (message.ok) pending.resolve(message.result);
-    else pending.reject(new Error(String(message.error ?? "Browser command failed")));
+    this.#socket = connect(path);
+    let hello;
+    let failed;
+    this.ready = new Promise((resolve2, reject) => {
+      hello = resolve2;
+      failed = reject;
+    });
+    this.ready.catch(() => void 0);
+    const helloTimer = setTimeout(
+      () => failed(new Error("The native host did not introduce the extension in time")),
+      HELLO_TIMEOUT_MS
+    );
+    this.#socket.on("data", (chunk) => {
+      this.#buffer += chunk.toString("utf8");
+      let newline = this.#buffer.indexOf("\n");
+      while (newline !== -1) {
+        const line = this.#buffer.slice(0, newline).trim();
+        this.#buffer = this.#buffer.slice(newline + 1);
+        newline = this.#buffer.indexOf("\n");
+        if (!line) continue;
+        let message;
+        try {
+          message = JSON.parse(line);
+        } catch {
+          continue;
+        }
+        if (message.type === "hello") {
+          this.version = String(message.version ?? "unknown");
+          clearTimeout(helloTimer);
+          hello();
+          continue;
+        }
+        if (message.type !== "response") continue;
+        const pending = this.#pending.get(Number(message.id));
+        if (!pending) continue;
+        this.#pending.delete(Number(message.id));
+        clearTimeout(pending.timer);
+        if (message.ok) pending.resolve(message.result);
+        else pending.reject(new Error(String(message.error ?? "Browser command failed")));
+      }
+    });
+    const drop = (reason) => {
+      if (this.closed) return;
+      this.closed = true;
+      clearTimeout(helloTimer);
+      failed(new Error(reason));
+      for (const pending of this.#pending.values()) {
+        clearTimeout(pending.timer);
+        pending.reject(new Error(reason));
+      }
+      this.#pending.clear();
+      onClose();
+    };
+    this.#socket.on("close", () => drop("The browser disconnected"));
+    this.#socket.on("error", (error51) => drop(`The browser disconnected: ${error51.message}`));
   }
   request(method, params = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
     return new Promise((resolve2, reject) => {
+      if (this.closed) {
+        reject(new Error("The browser disconnected"));
+        return;
+      }
       const id = this.#nextId++;
       const timer = setTimeout(() => {
         this.#pending.delete(id);
         reject(new Error(`Browser did not answer ${method} within ${timeoutMs}ms`));
       }, timeoutMs);
-      this.#pending.set(id, {
-        resolve: resolve2,
-        reject,
-        timer
-      });
+      this.#pending.set(id, { resolve: resolve2, reject, timer });
       this.#socket.write(`${JSON.stringify({ type: "request", id, method, params })}
 `);
     });
-  }
-  fail(reason) {
-    for (const pending of this.#pending.values()) {
-      clearTimeout(pending.timer);
-      pending.reject(new Error(reason));
-    }
-    this.#pending.clear();
   }
   close() {
     this.#socket.destroy();
   }
 };
-var Bridge = class {
-  #options;
-  #server = null;
-  #socketPath = null;
+var HostPool = class {
+  #dir;
   #connections = /* @__PURE__ */ new Map();
-  #counter = 0;
-  constructor(options) {
-    this.#options = options;
+  constructor(hostsDir) {
+    this.#dir = hostsDir;
   }
-  /**
-   * Every load binds its own socket file. libuv unlinks a unix socket path
-   * when its server handle closes, and the next process starts before
-   * disposing the old one, so a shared path would have the outgoing instance
-   * delete the incoming instance's socket. The pointer file is what stays put.
-   */
-  async start() {
-    const directory = dirname(this.#options.pointerPath);
-    await mkdir(directory, { recursive: true });
-    await this.#removeStaleSockets(directory);
-    const socketPath = join(directory, `bridge-${process.pid}-${Date.now()}.sock`);
-    const server = createServer((socket) => this.#accept(socket));
-    this.#server = server;
-    await new Promise((resolve2, reject) => {
-      server.once("error", reject);
-      server.listen(socketPath, () => {
-        server.removeListener("error", reject);
-        resolve2();
-      });
-    });
-    this.#socketPath = socketPath;
-    const temporary = `${this.#options.pointerPath}.${process.pid}.tmp`;
-    await writeFile(temporary, `${JSON.stringify({ socketPath })}
-`, "utf8");
-    await rename(temporary, this.#options.pointerPath);
-    this.#options.log(`Bridge listening on ${socketPath}`);
-  }
-  /** Sockets from a crashed server are dead files nothing will ever answer on. */
-  async #removeStaleSockets(directory) {
-    let entries;
+  /** Dial any host that appeared since last time, and forget the ones that died. */
+  async refresh() {
+    let entries = [];
     try {
-      entries = await readdir(directory);
+      entries = await readdir(this.#dir);
     } catch {
-      return;
     }
-    await Promise.all(
-      entries.filter((entry) => entry.startsWith("bridge-") && entry.endsWith(".sock")).map((entry) => rm(join(directory, entry), { force: true }))
-    );
-  }
-  #accept(socket) {
-    const id = `browser-${++this.#counter}`;
-    const connection = new Connection(id, socket);
-    socket.on("data", (chunk) => {
-      connection.handleData(chunk, () => {
-        this.#connections.set(id, connection);
-        this.#options.log(`Browser connected: ${id} (extension ${connection.version})`);
-        this.#options.onChange();
-      });
-    });
-    const drop = () => {
-      if (!this.#connections.delete(id)) return;
-      connection.fail("The browser disconnected");
-      this.#options.log(`Browser disconnected: ${id}`);
-      this.#options.onChange();
-    };
-    socket.on("close", drop);
-    socket.on("error", drop);
+    const live = entries.filter((entry) => SOCKET_PATTERN.test(entry));
+    for (const id of live) {
+      if (this.#connections.has(id)) continue;
+      const connection = new Connection(
+        id,
+        join(this.#dir, id),
+        () => this.#connections.delete(id)
+      );
+      this.#connections.set(id, connection);
+    }
+    await Promise.all([...this.#connections.values()].map((c) => c.ready.catch(() => void 0)));
+    return this.connections();
   }
   connections() {
-    return [...this.#connections.values()];
+    return [...this.#connections.values()].filter((c) => !c.closed && c.version !== "unknown");
   }
-  get(id) {
-    return this.#connections.get(id);
-  }
-  /** The newest connection, which is the one a fresh Chrome start produced. */
-  primary() {
-    let newest;
-    for (const connection of this.#connections.values()) {
-      if (!newest || connection.connectedAt > newest.connectedAt) newest = connection;
+  /** The browser an agent should drive: the only one, or the first one seen. */
+  async primary() {
+    const [connection] = await this.refresh();
+    if (!connection) {
+      throw new Error(
+        "No browser is connected. Open Chrome with the Agent Browser extension enabled (reload it from chrome://extensions if it already is), then call the status tool."
+      );
     }
-    return newest;
+    return connection;
   }
-  async stop() {
-    for (const connection of this.#connections.values()) {
-      connection.fail("agent-browser is shutting down");
-      connection.close();
-    }
+  close() {
+    for (const connection of this.#connections.values()) connection.close();
     this.#connections.clear();
-    const server = this.#server;
-    this.#server = null;
-    this.#socketPath = null;
-    if (!server) return;
-    await new Promise((resolve2) => server.close(() => resolve2()));
   }
 };
 
 // src/json-kv.ts
-import { mkdir as mkdir2, readFile, rename as rename2, writeFile as writeFile2 } from "node:fs/promises";
-import { dirname as dirname2 } from "node:path";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -31181,30 +31152,30 @@ var JsonFileKv = class {
   constructor(path) {
     this.#path = path;
   }
-  async get(key2) {
+  async get(key) {
     const data = await this.#read();
-    if (!(key2 in data)) return void 0;
-    return data[key2];
+    if (!(key in data)) return void 0;
+    return data[key];
   }
-  async set(key2, value) {
+  async set(key, value) {
     await this.#mutate((data) => {
-      data[key2] = value;
+      data[key] = value;
     });
   }
-  async delete(key2) {
+  async delete(key) {
     await this.#mutate((data) => {
-      delete data[key2];
+      delete data[key];
     });
   }
   async #mutate(fn) {
     const run = this.#queue.then(async () => {
       const data = await this.#read();
       fn(data);
-      await mkdir2(dirname2(this.#path), { recursive: true });
+      await mkdir(dirname(this.#path), { recursive: true });
       const temporary = `${this.#path}.${process.pid}.tmp`;
-      await writeFile2(temporary, `${JSON.stringify(data)}
+      await writeFile(temporary, `${JSON.stringify(data)}
 `, "utf8");
-      await rename2(temporary, this.#path);
+      await rename(temporary, this.#path);
     });
     this.#queue = run.then(
       () => void 0,
@@ -31230,11 +31201,12 @@ var JsonFileKv = class {
 };
 
 // src/mcp-tools.ts
-import { mkdir as mkdir3, writeFile as writeFile3 } from "node:fs/promises";
-import { dirname as dirname3, isAbsolute, resolve } from "node:path";
+import { mkdir as mkdir2, writeFile as writeFile2 } from "node:fs/promises";
+import { dirname as dirname2, isAbsolute, resolve } from "node:path";
 
 // src/mcp-session.ts
-var DEFAULT_MCP_SESSION = "scratch";
+import { randomUUID } from "node:crypto";
+var DEFAULT_MCP_SESSION = `agent-${randomUUID().slice(0, 8)}`;
 function mcpSessionId(raw) {
   const trimmed = raw?.trim();
   return trimmed === void 0 || trimmed === "" ? DEFAULT_MCP_SESSION : trimmed;
@@ -31341,31 +31313,32 @@ function formatPickContext(pick2) {
 }
 
 // src/pick-session.ts
-async function resolvePickTab(tabs, sessionKey) {
-  const bound = await tabs.resolve(sessionKey);
-  if (bound) return bound;
-  const connection = tabs.connection();
-  const { tabs: open } = await connection.request("tabs.list");
-  const active = open.find((tab) => tab.active) ?? open[0];
-  if (!active) {
+async function ensurePickTab(hosts, session) {
+  const connection = await hosts.primary();
+  const { tab } = await connection.request("session.status", { session });
+  if (tab) return connection;
+  const { tabs } = await connection.request("tabs.list");
+  const free = tabs.filter((candidate) => candidate.session === null);
+  const target = free.find((candidate) => candidate.active) ?? free[0];
+  if (!target) {
     throw new Error(
       "No tab to pick from. Open a URL with the open tool, or focus a tab in Chrome."
     );
   }
-  await tabs.attach(sessionKey, active.tabId);
-  return { connection, tabId: active.tabId };
+  await connection.request("session.attach", { session, tabId: target.tabId });
+  return connection;
 }
-async function pickFromSession(deps, sessionKey, timeoutMs = PICK_TIMEOUT_MS) {
-  const { connection, tabId } = await resolvePickTab(deps.tabs, sessionKey);
-  await connection.request("tabs.select", { tabId });
+async function pickFromSession(deps, session, timeoutMs = PICK_TIMEOUT_MS) {
+  const connection = await ensurePickTab(deps.hosts, session);
+  await connection.request("session.show", { session });
   const raw = await connection.request(
     "page.pick",
-    { tabId },
+    { session },
     timeoutMs + 5e3
   );
   const pick2 = parsePickedElement(raw, {
     id: newPickId(),
-    sessionKey,
+    sessionKey: session,
     createdAt: (/* @__PURE__ */ new Date()).toISOString()
   });
   if (!pick2) throw new Error("The page did not return a usable element.");
@@ -31373,10 +31346,9 @@ async function pickFromSession(deps, sessionKey, timeoutMs = PICK_TIMEOUT_MS) {
   const screenshot = typeof raw.screenshot === "string" && raw.screenshot.length > 0 ? `data:image/png;base64,${raw.screenshot}` : null;
   return { pick: pick2, label: formatPickLabel(pick2), screenshotDataUrl: screenshot };
 }
-async function cancelPickInSession(deps, sessionKey) {
-  const resolved = await deps.tabs.resolve(sessionKey);
-  if (!resolved) return;
-  await resolved.connection.request("page.pickCancel", { tabId: resolved.tabId }).catch(() => void 0);
+async function cancelPickInSession(deps, session) {
+  const connection = await deps.hosts.primary().catch(() => void 0);
+  await connection?.request("page.pickCancel", { session }).catch(() => void 0);
 }
 
 // src/url.ts
@@ -31393,7 +31365,9 @@ function normalizeUrl(input) {
 
 // src/mcp-tools.ts
 var MAX_EXTRACT_CHARS = 2e5;
-var sessionField = external_exports.string().optional();
+var LOAD_TIMEOUT_MS = 4e4;
+var sessionField = external_exports.string().optional().describe("Session name. Defaults to this process, which is one per agent.");
+var labelField = external_exports.string().optional().describe("Short name shown on this session's tab group, such as the task");
 function ok(text, extra = []) {
   return { content: [{ type: "text", text }, ...extra] };
 }
@@ -31410,12 +31384,18 @@ function clip(value) {
 
 [truncated at ${MAX_EXTRACT_CHARS} characters of ${value.length}]`;
 }
-function formatTab(tab) {
-  return `${tab.active ? "*" : " "} ${tab.tabId}  ${tab.title || tab.url}
+function formatTab(tab, session) {
+  const owner = tab.session === null ? "" : tab.session === session ? "  [yours]" : `  [agent: ${tab.session}]`;
+  return `${tab.active ? "*" : " "} ${tab.tabId}  ${tab.title || tab.url}${owner}
     ${tab.url}`;
 }
 function registerMcpTools(server, runtime) {
-  const { bridge, tabs, picks } = runtime;
+  const { hosts, picks, expectedVersion } = runtime;
+  const withTab = async (session) => {
+    const sessionKey = mcpSessionId(session);
+    const connection = await hosts.primary();
+    return { sessionKey, connection };
+  };
   server.registerTool(
     "status",
     {
@@ -31425,11 +31405,10 @@ function registerMcpTools(server, runtime) {
     async ({ session }) => {
       try {
         const sessionKey = mcpSessionId(session);
-        const connections = bridge.connections();
-        const resolved = await tabs.resolve(sessionKey);
-        const tab = resolved ? await resolved.connection.request("tabs.get", {
-          tabId: resolved.tabId
-        }) : null;
+        const connections = await hosts.refresh();
+        const primary = connections[0];
+        const tab = primary ? (await primary.request("session.status", { session: sessionKey })).tab : null;
+        const stale = connections.filter((connection) => connection.version !== expectedVersion);
         return ok(
           JSON.stringify(
             {
@@ -31439,7 +31418,8 @@ function registerMcpTools(server, runtime) {
                 version: connection.version
               })),
               sessionKey,
-              tab
+              tab,
+              ...connections.length === 0 ? { hint: "Open Chrome with the Agent Browser extension enabled, or reload it from chrome://extensions." } : stale.length ? { hint: `The extension is ${stale[0].version} but this server expects ${expectedVersion}. Reload it from chrome://extensions.` } : {}
             },
             null,
             2
@@ -31456,11 +31436,13 @@ function registerMcpTools(server, runtime) {
       description: "List every tab open in the user's Chrome",
       inputSchema: { session: sessionField }
     },
-    async () => {
+    async ({ session }) => {
       try {
-        const { tabs: listed } = await tabs.connection().request("tabs.list");
-        if (listed.length === 0) return ok("No open tabs.");
-        return ok(listed.map(formatTab).join("\n"));
+        const sessionKey = mcpSessionId(session);
+        const connection = await hosts.primary();
+        const { tabs } = await connection.request("tabs.list");
+        if (tabs.length === 0) return ok("No open tabs.");
+        return ok(tabs.map((tab) => formatTab(tab, sessionKey)).join("\n"));
       } catch (error51) {
         return fail(error51);
       }
@@ -31469,18 +31451,22 @@ function registerMcpTools(server, runtime) {
   server.registerTool(
     "open",
     {
-      description: "Open or navigate this session's tab. Creates and claims a background tab when none is bound.",
+      description: "Open or navigate this session's tab. Creates and claims a background tab in this session's tab group when none is bound.",
       inputSchema: {
         url: external_exports.string().min(1),
         show: external_exports.boolean().optional(),
+        label: labelField,
         session: sessionField
       }
     },
-    async ({ url: url2, show, session }) => {
+    async ({ url: url2, show, label, session }) => {
       try {
-        const tab = await tabs.open(mcpSessionId(session), normalizeUrl(url2), {
-          active: show === true
-        });
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request(
+          "session.open",
+          { session: sessionKey, url: normalizeUrl(url2), active: show === true, label },
+          LOAD_TIMEOUT_MS
+        );
         return ok(`Tab ${tab.tabId}: ${tab.url}`);
       } catch (error51) {
         return fail(error51);
@@ -31490,12 +31476,17 @@ function registerMcpTools(server, runtime) {
   server.registerTool(
     "attach",
     {
-      description: "Claim one of the user's existing tabs for this session",
-      inputSchema: { tabId: external_exports.number().int(), session: sessionField }
+      description: "Claim one of the user's existing tabs for this session. Fails if another agent holds it.",
+      inputSchema: { tabId: external_exports.number().int(), label: labelField, session: sessionField }
     },
-    async ({ tabId, session }) => {
+    async ({ tabId, label, session }) => {
       try {
-        const tab = await tabs.attach(mcpSessionId(session), tabId);
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request("session.attach", {
+          session: sessionKey,
+          tabId,
+          label
+        });
         return ok(`Attached to tab ${tab.tabId}: ${tab.url}`);
       } catch (error51) {
         return fail(error51);
@@ -31510,8 +31501,12 @@ function registerMcpTools(server, runtime) {
     },
     async ({ session }) => {
       try {
-        const binding = await tabs.release(mcpSessionId(session));
-        return ok(binding ? `Released tab ${binding.tabId}.` : "No tab was bound.");
+        const { sessionKey, connection } = await withTab(session);
+        const { released } = await connection.request(
+          "session.release",
+          { session: sessionKey }
+        );
+        return ok(released === null ? "No tab was bound." : `Released tab ${released}.`);
       } catch (error51) {
         return fail(error51);
       }
@@ -31525,11 +31520,11 @@ function registerMcpTools(server, runtime) {
     },
     async ({ session }) => {
       try {
-        const sessionKey = mcpSessionId(session);
-        const { connection, tabId } = await tabs.require(sessionKey);
-        await connection.request("tabs.close", { tabId });
-        await tabs.release(sessionKey);
-        return ok(`Closed tab ${tabId}.`);
+        const { sessionKey, connection } = await withTab(session);
+        const { closed } = await connection.request("session.close", {
+          session: sessionKey
+        });
+        return ok(closed === null ? "No tab was bound." : `Closed tab ${closed}.`);
       } catch (error51) {
         return fail(error51);
       }
@@ -31543,8 +31538,8 @@ function registerMcpTools(server, runtime) {
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const tab = await connection.request("tabs.select", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request("session.show", { session: sessionKey });
         return ok(`Showing ${tab.url}`);
       } catch (error51) {
         return fail(error51);
@@ -31559,8 +31554,12 @@ function registerMcpTools(server, runtime) {
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const tab = await connection.request("tabs.reload", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const tab = await connection.request(
+          "session.reload",
+          { session: sessionKey },
+          LOAD_TIMEOUT_MS
+        );
         return ok(`Reloaded ${tab.url}`);
       } catch (error51) {
         return fail(error51);
@@ -31575,8 +31574,8 @@ function registerMcpTools(server, runtime) {
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const result = await connection.request("page.text", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const result = await connection.request("page.text", { session: sessionKey });
         return ok(clip(String(result.text ?? "")));
       } catch (error51) {
         return fail(error51);
@@ -31591,8 +31590,8 @@ function registerMcpTools(server, runtime) {
     },
     async ({ session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        const result = await connection.request("page.html", { tabId });
+        const { sessionKey, connection } = await withTab(session);
+        const result = await connection.request("page.html", { session: sessionKey });
         return ok(clip(String(result.html ?? "")));
       } catch (error51) {
         return fail(error51);
@@ -31607,9 +31606,9 @@ function registerMcpTools(server, runtime) {
     },
     async ({ expression, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         const { value } = await connection.request("page.eval", {
-          tabId,
+          session: sessionKey,
           expression
         });
         return ok(typeof value === "string" ? value : JSON.stringify(value, null, 2));
@@ -31626,8 +31625,8 @@ function registerMcpTools(server, runtime) {
     },
     async ({ selector, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        await connection.request("input.click", { tabId, selector });
+        const { sessionKey, connection } = await withTab(session);
+        await connection.request("input.click", { session: sessionKey, selector });
         return ok(`Clicked ${selector}`);
       } catch (error51) {
         return fail(error51);
@@ -31647,9 +31646,9 @@ function registerMcpTools(server, runtime) {
     },
     async ({ selector, text, submit, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         await connection.request("input.type", {
-          tabId,
+          session: sessionKey,
           selector,
           text,
           submit: submit === true
@@ -31666,11 +31665,11 @@ function registerMcpTools(server, runtime) {
       description: "Press a key such as Enter, Tab, Escape, or ArrowDown",
       inputSchema: { key: external_exports.string().min(1), session: sessionField }
     },
-    async ({ key: key2, session }) => {
+    async ({ key, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
-        await connection.request("input.press", { tabId, key: key2 });
-        return ok(`Pressed ${key2}`);
+        const { sessionKey, connection } = await withTab(session);
+        await connection.request("input.press", { session: sessionKey, key });
+        return ok(`Pressed ${key}`);
       } catch (error51) {
         return fail(error51);
       }
@@ -31689,9 +31688,9 @@ function registerMcpTools(server, runtime) {
     async ({ up, amount, session }) => {
       try {
         const pixels = amount ?? 600;
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         await connection.request("input.scroll", {
-          tabId,
+          session: sessionKey,
           deltaY: up === true ? -pixels : pixels
         });
         return ok(up === true ? `Scrolled up ${pixels}px` : `Scrolled down ${pixels}px`);
@@ -31713,10 +31712,10 @@ function registerMcpTools(server, runtime) {
     async ({ selector, timeoutMs, session }) => {
       try {
         const timeout = timeoutMs ?? 1e4;
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         await connection.request(
           "page.wait",
-          { tabId, selector, timeoutMs: timeout },
+          { session: sessionKey, selector, timeoutMs: timeout },
           timeout + 5e3
         );
         return ok(`Found ${selector}`);
@@ -31737,16 +31736,16 @@ function registerMcpTools(server, runtime) {
     },
     async ({ path, fullPage, session }) => {
       try {
-        const { connection, tabId } = await tabs.require(mcpSessionId(session));
+        const { sessionKey, connection } = await withTab(session);
         const { data } = await connection.request("page.screenshot", {
-          tabId,
+          session: sessionKey,
           fullPage: fullPage === true
         });
         const image = { type: "image", data, mimeType: "image/png" };
         if (!path) return ok("Captured screenshot.", [image]);
         const target = isAbsolute(path) ? path : resolve(process.cwd(), path);
-        await mkdir3(dirname3(target), { recursive: true });
-        await writeFile3(target, Buffer.from(data, "base64"));
+        await mkdir2(dirname2(target), { recursive: true });
+        await writeFile2(target, Buffer.from(data, "base64"));
         return ok(`Wrote ${target}`, [image]);
       } catch (error51) {
         return fail(error51);
@@ -31765,7 +31764,7 @@ function registerMcpTools(server, runtime) {
     async ({ timeoutMs, session }) => {
       try {
         const { pick: pick2, label } = await pickFromSession(
-          { tabs, picks },
+          { hosts, picks },
           mcpSessionId(session),
           timeoutMs ?? PICK_TIMEOUT_MS
         );
@@ -31785,7 +31784,7 @@ ${formatPickContext(pick2)}`);
     },
     async ({ session }) => {
       try {
-        await cancelPickInSession({ tabs, picks }, mcpSessionId(session));
+        await cancelPickInSession({ hosts, picks }, mcpSessionId(session));
         return ok("Cancelled the in-page picker.");
       } catch (error51) {
         return fail(error51);
@@ -31796,9 +31795,9 @@ ${formatPickContext(pick2)}`);
 
 // src/install.ts
 import { existsSync } from "node:fs";
-import { chmod, mkdir as mkdir4, writeFile as writeFile4 } from "node:fs/promises";
+import { chmod, mkdir as mkdir3, writeFile as writeFile3 } from "node:fs/promises";
 import { homedir } from "node:os";
-import { dirname as dirname4, join as join2 } from "node:path";
+import { dirname as dirname3, join as join2 } from "node:path";
 import { fileURLToPath } from "node:url";
 var EXTENSION_ID = "chabhnkncinakogfdckllfckfdegbiji";
 var HOST_NAME = "com.jssblck.agent_browser";
@@ -31824,10 +31823,10 @@ function browserTargets() {
   ];
 }
 function skillRoot() {
-  let dir = dirname4(fileURLToPath(import.meta.url));
+  let dir = dirname3(fileURLToPath(import.meta.url));
   for (let depth = 0; depth < 4; depth++) {
     if (existsSync(join2(dir, "extension", "manifest.json"))) return dir;
-    dir = dirname4(dir);
+    dir = dirname3(dir);
   }
   throw new Error("Could not locate the skill's extension directory");
 }
@@ -31835,7 +31834,7 @@ var extensionDir = () => join2(skillRoot(), "extension");
 function installPaths(dataDir = join2(homedir(), ".agents", "browser")) {
   return {
     dataDir,
-    pointerPath: join2(dataDir, "bridge.json"),
+    hostsDir: join2(dataDir, "hosts"),
     wrapperPath: join2(dataDir, "native-host", "agent-browser-host")
   };
 }
@@ -31844,11 +31843,11 @@ async function install(paths) {
   const wrapper = [
     "#!/bin/sh",
     "# Agent Browser native messaging host. Generated by agent-browser install.",
-    `ELECTRON_RUN_AS_NODE=1 exec ${quote(process.execPath)} ${quote(bridgePath)} ${quote(paths.pointerPath)}`,
+    `ELECTRON_RUN_AS_NODE=1 exec ${quote(process.execPath)} ${quote(bridgePath)} ${quote(paths.hostsDir)}`,
     ""
   ].join("\n");
-  await mkdir4(dirname4(paths.wrapperPath), { recursive: true });
-  await writeFile4(paths.wrapperPath, wrapper, "utf8");
+  await mkdir3(dirname3(paths.wrapperPath), { recursive: true });
+  await writeFile3(paths.wrapperPath, wrapper, "utf8");
   await chmod(paths.wrapperPath, 493);
   const manifest = {
     name: HOST_NAME,
@@ -31865,9 +31864,9 @@ async function install(paths) {
       continue;
     }
     const directory = join2(target.supportDir, "NativeMessagingHosts");
-    await mkdir4(directory, { recursive: true });
+    await mkdir3(directory, { recursive: true });
     const path = join2(directory, `${HOST_NAME}.json`);
-    await writeFile4(path, `${JSON.stringify(manifest, null, 2)}
+    await writeFile3(path, `${JSON.stringify(manifest, null, 2)}
 `, "utf8");
     manifests.push({ browser: target.name, path });
   }
@@ -31907,98 +31906,6 @@ var PickStore = class {
   }
 };
 
-// src/tabs.ts
-var key = (sessionKey) => `tab:${sessionKey}`;
-var TabRegistry = class {
-  #bridge;
-  #kv;
-  #onChange;
-  constructor(options) {
-    this.#bridge = options.bridge;
-    this.#kv = options.kv;
-    this.#onChange = options.onChange;
-  }
-  /** The connection a binding names, falling back to the only browser there is. */
-  #connectionFor(binding) {
-    if (binding) {
-      const exact = this.#bridge.get(binding.browserId);
-      if (exact) return exact;
-    }
-    return this.#bridge.primary();
-  }
-  connection() {
-    const connection = this.#bridge.primary();
-    if (!connection) {
-      throw new Error(
-        "No browser is connected. Open Chrome with the Agent Browser extension enabled, then call the status tool."
-      );
-    }
-    return connection;
-  }
-  async binding(sessionKey) {
-    return this.#kv.get(key(sessionKey));
-  }
-  async bind(sessionKey, binding) {
-    await this.#kv.set(key(sessionKey), binding);
-    this.#onChange(sessionKey);
-  }
-  async release(sessionKey) {
-    const binding = await this.binding(sessionKey);
-    await this.#kv.delete(key(sessionKey));
-    if (binding) {
-      const connection = this.#connectionFor(binding);
-      await connection?.request("tabs.release", { tabId: binding.tabId }).catch(() => void 0);
-    }
-    this.#onChange(sessionKey);
-    return binding;
-  }
-  /** The bound tab, checked against the live browser before it is used. */
-  async resolve(sessionKey) {
-    const binding = await this.binding(sessionKey);
-    if (!binding) return void 0;
-    const connection = this.#connectionFor(binding);
-    if (!connection) return void 0;
-    try {
-      await connection.request("tabs.get", { tabId: binding.tabId });
-    } catch {
-      await this.#kv.delete(key(sessionKey));
-      this.#onChange(sessionKey);
-      return void 0;
-    }
-    return { connection, tabId: binding.tabId };
-  }
-  async require(sessionKey) {
-    const resolved = await this.resolve(sessionKey);
-    if (resolved) return resolved;
-    throw new Error(
-      "This session has no browser tab. Open one with the open tool, or claim an existing tab with the attach tool."
-    );
-  }
-  /** Opens a tab for this thread, reusing the bound one when it still exists. */
-  async open(sessionKey, url2, options = {}) {
-    const existing = await this.resolve(sessionKey);
-    if (existing) {
-      return existing.connection.request("tabs.navigate", {
-        tabId: existing.tabId,
-        url: url2
-      });
-    }
-    const connection = this.connection();
-    const tab = await connection.request("tabs.open", {
-      url: url2,
-      active: options.active ?? false
-    });
-    await this.bind(sessionKey, { browserId: connection.id, tabId: tab.tabId });
-    return tab;
-  }
-  async attach(sessionKey, tabId) {
-    const connection = this.connection();
-    const tab = await connection.request("tabs.get", { tabId });
-    await this.bind(sessionKey, { browserId: connection.id, tabId });
-    return tab;
-  }
-};
-
 // src/mcp.ts
 function log(message) {
   process.stderr.write(`${message}
@@ -32013,23 +31920,22 @@ async function installOnly() {
 async function serve() {
   const paths = installPaths();
   const kv = new JsonFileKv(join3(paths.dataDir, "mcp-kv.json"));
-  const bridge = new Bridge({ pointerPath: paths.pointerPath, log, onChange: () => void 0 });
-  await bridge.start();
-  const tabs = new TabRegistry({ bridge, kv, onChange: () => void 0 });
+  const hosts = new HostPool(paths.hostsDir);
   const picks = new PickStore(kv);
   try {
     await install(paths);
   } catch (error51) {
     log(`Could not refresh the native messaging host: ${String(error51)}`);
   }
-  const server = new McpServer({ name: "agent-browser", version: "0.2.0" });
-  registerMcpTools(server, { bridge, tabs, picks });
-  const shutdown = async () => {
-    await bridge.stop();
+  const manifest = JSON.parse(await readFile2(join3(extensionDir(), "manifest.json"), "utf8"));
+  const server = new McpServer({ name: "agent-browser", version: manifest.version });
+  registerMcpTools(server, { hosts, picks, expectedVersion: manifest.version });
+  const shutdown = () => {
+    hosts.close();
     process.exit(0);
   };
-  process.on("SIGINT", () => void shutdown());
-  process.on("SIGTERM", () => void shutdown());
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
   log(
     `agent-browser MCP waiting for the extension at ${extensionDir()}. If status stays disconnected, reload the unpacked Agent Browser extension.`
   );

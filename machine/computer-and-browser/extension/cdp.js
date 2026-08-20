@@ -3,13 +3,24 @@
 // Reading a page needs nothing but chrome.scripting, so we attach the debugger
 // lazily: only real input, arbitrary JavaScript, and background-tab
 // screenshots need it. Every attach paints a banner across the user's tab, so
-// the set of attached tabs stays as small as the task allows.
-const attached = new Set();
+// a tab stays attached only while commands keep arriving. The banner clears
+// itself a few seconds after the last detach.
+const IDLE_DETACH_MS = 30_000;
+
+/** tabId -> idle timer */
+const attached = new Map();
+
+function touch(tabId) {
+  clearTimeout(attached.get(tabId));
+  attached.set(
+    tabId,
+    setTimeout(() => void detach(tabId), IDLE_DETACH_MS),
+  );
+}
 
 export async function attach(tabId) {
-  if (attached.has(tabId)) return;
-  await chrome.debugger.attach({ tabId }, "1.3");
-  attached.add(tabId);
+  if (!attached.has(tabId)) await chrome.debugger.attach({ tabId }, "1.3");
+  touch(tabId);
 }
 
 export async function send(tabId, method, params = {}) {
@@ -18,7 +29,10 @@ export async function send(tabId, method, params = {}) {
 }
 
 export async function detach(tabId) {
-  if (!attached.delete(tabId)) return;
+  const timer = attached.get(tabId);
+  if (timer === undefined) return;
+  clearTimeout(timer);
+  attached.delete(tabId);
   try {
     await chrome.debugger.detach({ tabId });
   } catch {
@@ -27,18 +41,21 @@ export async function detach(tabId) {
 }
 
 export async function detachAll() {
-  await Promise.all([...attached].map((tabId) => detach(tabId)));
+  await Promise.all([...attached.keys()].map((tabId) => detach(tabId)));
 }
 
 export function attachedTabs() {
-  return [...attached];
+  return [...attached.keys()];
 }
 
 // The user can end a debug session from the banner, and closing a tab ends it
-// implicitly. Both leave our set stale unless we follow Chrome's events.
+// implicitly. Both leave our map stale unless we follow Chrome's events.
 chrome.debugger.onDetach.addListener((source) => {
-  if (source.tabId !== undefined) attached.delete(source.tabId);
+  if (source.tabId === undefined) return;
+  clearTimeout(attached.get(source.tabId));
+  attached.delete(source.tabId);
 });
 chrome.tabs.onRemoved.addListener((tabId) => {
+  clearTimeout(attached.get(tabId));
   attached.delete(tabId);
 });

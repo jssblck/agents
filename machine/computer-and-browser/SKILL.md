@@ -29,7 +29,9 @@ When the work needs the user's real Chrome, use the extension that belongs to th
 
 Do not reach for `agent-browser` from Claude Code or Codex when their own extension is available. Only one extension should drive a tab at a time.
 
-For `agent-browser`, discover tools with `search_tool` (`agent-browser`, `status`, `tabs`, `open`). This is the Agent Browser extension in Chrome: same profile, cookies, and logins, no Chrome Allow dialog. Call `status` first. If nothing is connected, tell the user to reload the unpacked Agent Browser extension (`chrome://extensions`). Then `open` a URL or `attach` an existing tab. Later commands act on that session's tab.
+For `agent-browser`, discover tools with `search_tool` (`agent-browser`, `status`, `tabs`, `open`). This is the Agent Browser extension in Chrome: same profile, cookies, and logins, no Chrome Allow dialog. Call `status` first. If nothing is connected, or `status` says the extension is stale, tell the user to reload the unpacked Agent Browser extension (`chrome://extensions`). Then `open` a URL (pass a short `label` naming the task) or `attach` a tab nobody holds. Later commands act on that session's tab.
+
+Many agents share one Chrome. Each agent is its own session with its own tab, shown in a colored tab group titled `Agent: <label>`. `tabs` marks tabs as `[yours]` or `[agent: ...]`; `attach` refuses a tab another agent holds. When an agent's session ends, its tab is released and left open for the user. The debugger banner clears on its own after 30 seconds without commands.
 
 Use `peekaboo` for desktop UI. Call `see` first. Act on element IDs from that snapshot. Do not screenshot-click a webpage that still has a DOM snapshot.
 
@@ -37,7 +39,7 @@ Do not use `chrome-devtools` `--autoConnect`. Do not use hangwin `chrome-mcp-ser
 
 ## Setup that blocks the tools
 
-`agent-browser` lives in this skill directory: `extension/` (unpacked MV3 extension), `native-host/bridge.mjs`, and `mcp/agent-browser.mjs` (a single-file MCP server, no install step). Runtime state is under `~/.agents/browser/`.
+`agent-browser` lives in this skill directory: `extension/` (unpacked MV3 extension), `native-host/bridge.mjs` (Chrome starts it; it is the hub every agent connects to), and `mcp/agent-browser.mjs` (a single-file MCP server, one per agent, no install step). Runtime state is under `~/.agents/browser/`.
 
 Register the MCP server once per harness. From a global install the path is `~/.agents/skills/computer-and-browser/mcp/agent-browser.mjs`:
 
@@ -45,7 +47,7 @@ Register the MCP server once per harness. From a global install the path is `~/.
 { "mcpServers": { "agent-browser": { "command": "node", "args": ["/Users/<you>/.agents/skills/computer-and-browser/mcp/agent-browser.mjs"] } } }
 ```
 
-The server refreshes the native messaging manifests on every start. To do only that, run `node .../mcp/agent-browser.mjs install`. Load the extension once by hand: open `chrome://extensions`, turn on Developer mode, choose Load unpacked, and pick this skill's `extension/`. The key in the manifest pins its id, so the folder can move. If `status` stays disconnected, reload the extension. If two `agent-browser` processes run, whichever started last owns the socket.
+The server refreshes the native messaging manifests on every start. To do only that, run `node .../mcp/agent-browser.mjs install`. Load the extension once by hand: open `chrome://extensions`, turn on Developer mode, choose Load unpacked, and pick this skill's `extension/`. The key in the manifest pins its id, so the folder can move. If `status` stays disconnected, reload the extension. After updating the extension or native host, reload the extension so Chrome restarts the host.
 
 Peekaboo needs Screen Recording, Accessibility, and (for some clicks) Event Synthesizing granted to Peekaboo (`boo.peekaboo.peekaboo`), not Terminal. Check with `peekaboo permissions status --no-remote`.
 

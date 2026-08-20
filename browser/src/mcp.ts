@@ -1,20 +1,20 @@
 // Standalone MCP server for the Agent Browser extension.
 //
-// This process owns the unix socket the native host dials, then exposes the
-// extension's commands over stdio MCP so any harness can drive the user's
-// real Chrome. `install` as the first argument only refreshes the native
-// messaging manifests and exits.
+// One of these runs per agent. It dials the native host Chrome started for
+// the extension and exposes the extension's commands over stdio MCP, so any
+// harness can drive the user's real Chrome. `install` as the first argument
+// only refreshes the native messaging manifests and exits.
+import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 
-import { Bridge } from "./bridge.ts";
+import { HostPool } from "./hosts.ts";
 import { JsonFileKv } from "./json-kv.ts";
 import { registerMcpTools } from "./mcp-tools.ts";
 import { extensionDir, install, installPaths } from "./install.ts";
 import { PickStore } from "./picks.ts";
-import { TabRegistry } from "./tabs.ts";
 
 function log(message: string): void {
   process.stderr.write(`${message}\n`);
@@ -31,10 +31,7 @@ async function serve(): Promise<void> {
   const paths = installPaths();
   const kv = new JsonFileKv(join(paths.dataDir, "mcp-kv.json"));
 
-  const bridge = new Bridge({ pointerPath: paths.pointerPath, log, onChange: () => undefined });
-  await bridge.start();
-
-  const tabs = new TabRegistry({ bridge, kv, onChange: () => undefined });
+  const hosts = new HostPool(paths.hostsDir);
   const picks = new PickStore(kv);
 
   try {
@@ -43,15 +40,18 @@ async function serve(): Promise<void> {
     log(`Could not refresh the native messaging host: ${String(error)}`);
   }
 
-  const server = new McpServer({ name: "agent-browser", version: "0.2.0" });
-  registerMcpTools(server, { bridge, tabs, picks });
+  const manifest = JSON.parse(await readFile(join(extensionDir(), "manifest.json"), "utf8")) as {
+    version: string;
+  };
+  const server = new McpServer({ name: "agent-browser", version: manifest.version });
+  registerMcpTools(server, { hosts, picks, expectedVersion: manifest.version });
 
-  const shutdown = async () => {
-    await bridge.stop();
+  const shutdown = () => {
+    hosts.close();
     process.exit(0);
   };
-  process.on("SIGINT", () => void shutdown());
-  process.on("SIGTERM", () => void shutdown());
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 
   log(
     `agent-browser MCP waiting for the extension at ${extensionDir()}. If status stays disconnected, reload the unpacked Agent Browser extension.`,
