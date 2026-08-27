@@ -1,15 +1,20 @@
 ---
 name: ship-it
-description: Use when asked to "ship it", commit and open a PR, or get CI green. Verifies locally, commits, opens the PR, and loops on CI until every check passes.
+description: >
+  Land a completed workstream by verifying it end to end, attaching proof with
+  gh-image, committing, opening a ready pull request, and driving every CI
+  check to green. Use when the user says "ship it", "commit and open a PR",
+  "get CI green", "push this and watch CI", or otherwise asks the agent to
+  finish and publish the current change.
 user-invocable: true
 ---
 
 # Ship it: commit, open the PR, get CI green
 
 Finish with the change committed, pushed, open as a ready pull request, and green
-in CI. Invoking `$ship-it` authorizes that complete workflow. Pause only for a
-material ambiguity, a required approval, or a failure that cannot be resolved
-with the available access.
+in CI. Invoking `$ship-it` authorizes that complete workflow, including uploading
+end-to-end proof with `gh-image`. Pause only for a material ambiguity, a required
+approval, or a failure that cannot be resolved with the available access.
 
 Work on a feature branch, never the default branch (in a worktree if that is the
 repo's flow). If you are already on a feature branch, stay on it. Follow the
@@ -37,6 +42,21 @@ a toolchain.
   that need services or extra setup: those often skip silently when unconfigured,
   so a green run can be hollow. Make sure the relevant ones actually ran. A change
   that does not reach that layer may not need it.
+- **Then exercise the change end to end.** Automated tests are not a substitute
+  for using the product. Drive the change the way a user would, and keep the
+  artifacts from that run (screenshots, a short recording, the command
+  transcript, a log). Those files stay local; do not commit them.
+
+  For a UI, click through the flow: the happy path, empty and error states, and
+  every page or route that shares the state, data, or components you touched.
+  Check desktop and mobile when layout or styling changed. Hunt for regressions
+  in surrounding flows; a change that works in isolation and breaks elsewhere is
+  the common miss. For a CLI or API, run the real command or request against
+  real inputs and save the transcript.
+
+  Skip capture only when the change has no runtime surface (a comment, a rename
+  with no behavior, prose with nothing to execute). Write that sentence in
+  Testing. If the change can be exercised, it must be.
 
 When a fix breaks a test, do not just patch the one failure: scan for other call
 sites or fixtures that relied on the old behavior, so the next CI run does not
@@ -99,10 +119,27 @@ Fixes #<issue>.
 
 <Exact commands run and their results. If a check was not run, say why.>
 
+<What was exercised end to end, and the gh-image proof embeds.>
+
 <attribution footer required by the active global instructions, if any>
 EOF
 )"
 ```
+
+Upload the local proof with the `github-image-upload` skill (`gh image`) before
+or as you write that Testing section. Read that skill and follow it for
+prerequisites, path resolution, and embed safety. Invoking `$ship-it` is
+confirmation to upload the proof files: state the files and the destination
+repo, then upload. Do not install or upgrade the extension yourself.
+
+- On a new PR, put the returned markdown in the Testing section of the body you
+  write.
+- On an existing PR, append the proof with that skill's description pipeline.
+  Testing lives in the PR body, not a comment.
+- If the extension is missing or the upload fails, stop and tell the user. Do
+  not ship without proof, and do not substitute another host.
+
+Do not commit the proof files.
 
 Notes:
 
@@ -116,7 +153,8 @@ Notes:
 - Base the default branch. Create a normal ready PR, with no labels or reviewers
   unless asked. Do not add an agent-specific title prefix.
 - Before watching CI, verify the final PR's base, head, readiness, title, body,
-  and URL with `gh pr view`.
+  and URL with `gh pr view`. Confirm the Testing section contains the
+  `user-attachments` proof (or the no-runtime-surface sentence).
 
 ## 4. Get CI green
 
@@ -133,12 +171,14 @@ gh run view <run-id> --log-failed
 ```
 
 Then loop: **diagnose the failure, fix it, re-run the local gates from step 1,
-commit the fix, push, and re-poll.** A first red run is normal and useful (it
+commit the fix, push, and re-poll.** If the fix changes behavior, capture new
+end-to-end proof and attach it. A first red run is normal and useful (it
 catches hidden dependencies like a fixture that relied on old behavior); keep
 going until it is all green. Do not declare done on a partial pass.
 
 ## 5. Report
 
 Close with the PR link and the concrete green state: which check groups passed,
-what shipped as a short list of commits, and any first-run failure fixed along
-the way. State plainly that CI is fully green.
+what shipped as a short list of commits, the end-to-end proof that landed in
+Testing, and any first-run failure fixed along the way. State plainly that CI
+is fully green.
