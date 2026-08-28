@@ -1,0 +1,4 @@
+interface:
+  display_name: "Testing Craft"
+  short_description: "Behavior-first tests: no change detectors, mocks last, deterministic"
+  default_prompt: "Use $testing-craft while writing or reviewing tests."

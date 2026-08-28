@@ -1,6 +1,6 @@
 ---
 name: code-craft
-description: Use when writing, reviewing, or refactoring code, or scaffolding a new project. Language-agnostic principles (types encode invariants, parse don't validate, errors as values, no mocks, earn abstractions) with dialects for Rust, TypeScript, Go, and Python.
+description: Use when writing, reviewing, or refactoring code, or scaffolding a new project. Language-agnostic principles (types encode invariants, parse don't validate, errors as values, earn abstractions) with dialects for Rust, TypeScript, Go, and Python. Testing guidance lives in the testing-craft skill.
 user-invocable: true
 argument-hint: "[rust|typescript|go|python] [target]"
 ---
@@ -20,8 +20,8 @@ the same everywhere; only the spelling changes.
    each universal principle is spelled in that language, plus the idioms and
    tooling unique to it. Load only the language(s) you are working in.
 3. **Read `principles/<name>.md` for depth** when a principle is the crux of the
-   change (a boundary redesign, an error-model decision, a test strategy). The
-   core below is the summary; the principle file is the workflow and the nuance.
+   change (a boundary redesign, an error-model decision). The core below is the
+   summary; the principle file is the workflow and the nuance.
 4. Run the project's own formatter, type-check, linter, and tests before
    claiming done. The language file names the concrete commands.
 
@@ -72,14 +72,14 @@ not an owned container). This matters most in Rust and C-family code and least
 in GC'd languages, but unnecessary deep copies and re-allocations are a smell
 everywhere. Do not contort readable code for a copy you have not measured.
 
-### 6. Test behavior, not implementation; avoid mocks
+### 6. Testing lives in testing-craft
 
-Test at real boundaries with real data. Prefer pure functions, real temp files,
-and throwaway fixtures over mocking frameworks that assert on internal calls.
-Name tests for the behavior they pin. Use property-based tests where the input
-space is large. Keep tests deterministic: no sleeps for synchronization, expose
-a join/observe channel instead. Depth:
-[`principles/testing.md`](principles/testing.md).
+All test guidance (behavior over implementation, change-detector tests, test
+doubles, layer choice, DAMP structure, determinism, property-based tests,
+per-language test dialects) moved to the
+[`testing-craft`](../testing-craft/SKILL.md) skill. Use it whenever you
+write or review tests. The slot keeps its number so the other principles'
+cross-references stay valid.
 
 ### 7. Architecture docs are a stable map
 
