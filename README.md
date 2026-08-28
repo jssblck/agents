@@ -3,18 +3,16 @@
 Jess's agent skills, one directory per skill, in the
 [Agent Skills](https://agentskills.io/specification) format.
 
-Project skills live under `skills/`. Install into a project (writes
-`.agents/skills/`, links `.claude/skills/`, records `skills-lock.json`):
+Project skills live under `skills/`. Machine skills live under `machine/`.
 
 ```sh
-npx skills add jssblck/agents -a claude-code -a codex -y
+./install -g   # replace ~/.agents/skills and ~/.claude/skills with this repo
+./install      # sync project skills into the current repo; keep the project's own
 ```
 
-Machine skills live under `machine/`. Install them once per machine:
+`-g` deletes the user-level skill directories, then installs both packs globally.
 
-```sh
-npx skills add jssblck/agents/machine -a claude-code -a codex -g -y
-```
+Without `-g`, installs the project pack into the current directory (`.agents/skills/`, linked from `.claude/skills/`, recorded in `skills-lock.json`). Copies of skills this repo has deleted are removed when git does not track them. Project-owned skills and installs from other sources stay.
 
 ## Agent Browser
 
