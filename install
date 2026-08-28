@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# Sync this repo's skills. -g replaces user-level skills; without -g, syncs
+# the project pack into the current directory and drops leftovers this repo
+# no longer ships (git-tracked project skills and other sources stay).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+SOURCE="jssblck/agents"
+
+usage() {
+  cat <<'USAGE'
+Usage: install [-g]
+       install -h|--help
+
+Sync skills from jssblck/agents (Claude Code and Codex).
+
+  -g            User-level: delete ~/.agents/skills and ~/.claude/skills,
+                then install the machine pack and the project pack globally.
+                Use this to match your machine to this repo.
+
+                npx skills add jssblck/agents/machine -a claude-code -a codex -g -y
+                npx skills add jssblck/agents -a claude-code -a codex -g -y
+
+  (no flag)     Project-level: from the current directory, install only the
+                project pack. Leftover copies of skills this repo has deleted
+                are removed when git does not track them. Project-owned skills
+                and installs from other sources stay.
+
+                npx skills add jssblck/agents -a claude-code -a codex -y
+
+  -h, --help    Show this help and exit.
+USAGE
+}
+
+GLOBAL=0
+while (($#)); do
+  case "$1" in
+    -g) GLOBAL=1 ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "install: unknown option: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+add() {
+  npx --yes skills add "$@" -a claude-code -a codex -y
+}
+
+# Remove untracked project copies of skills that jssblck/agents used to ship
+# and no longer does. Tracked skills and installs from other sources stay.
+prune_stale_project_skills() {
+  if ! command -v python3 >/dev/null 2>&1; then
+    echo "install: warning: python3 not found; skipped leftover skill cleanup" >&2
+    return 0
+  fi
+  if ! INSTALL_ROOT="$ROOT" python3 - <<'PY'
+import json
+import os
+import shutil
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+cwd = Path.cwd()
+root = Path(os.environ["INSTALL_ROOT"])
+lock_path = cwd / "skills-lock.json"
+
+
+def git_tracked(path: Path) -> bool:
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "--", str(path)],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return False
+    return bool(result.stdout.strip())
+
+
+def names_from_github() -> set[str]:
+    req = urllib.request.Request(
+        "https://api.github.com/repos/jssblck/agents/contents/skills",
+        headers={
+            "Accept": "application/vnd.github+json",
+            "User-Agent": "jssblck-agents-install",
+        },
+    )
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        req.add_header("Authorization", f"Bearer {token}")
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = json.load(resp)
+    if not isinstance(data, list):
+        raise RuntimeError("unexpected GitHub contents response")
+    return {item["name"] for item in data if item.get("type") == "dir"}
+
+
+def names_from_clone() -> set[str]:
+    skills = root / "skills"
+    if not skills.is_dir() or not (root / "machine").is_dir():
+        return set()
+    return {p.name for p in skills.iterdir() if p.name != ".git" and not p.name.startswith(".")}
+
+
+def current_names() -> set[str]:
+    try:
+        names = names_from_github()
+        if names:
+            return names
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, RuntimeError, OSError):
+        pass
+    names = names_from_clone()
+    if names:
+        return names
+    raise RuntimeError("could not list current project skills from jssblck/agents")
+
+
+def from_this_repo(entry: object) -> bool:
+    if not isinstance(entry, dict):
+        return False
+    source = str(entry.get("source") or "")
+    url = str(entry.get("sourceUrl") or "")
+    return source == "jssblck/agents" or "jssblck/agents" in url
+
+
+def remove_path(path: Path) -> None:
+    if path.is_symlink() or path.is_file():
+        path.unlink()
+    elif path.is_dir():
+        shutil.rmtree(path)
+
+
+def main() -> None:
+    try:
+        current = current_names()
+    except RuntimeError as exc:
+        print(f"install: warning: {exc}; skipped leftover skill cleanup", file=sys.stderr)
+        return
+
+    lock: dict = {"skills": {}}
+    if lock_path.is_file():
+        try:
+            loaded = json.loads(lock_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            print(
+                f"install: warning: {lock_path} is not valid JSON; skipped leftover skill cleanup",
+                file=sys.stderr,
+            )
+            return
+        if isinstance(loaded, dict):
+            lock = loaded
+
+    skills_lock = lock.get("skills")
+    if not isinstance(skills_lock, dict):
+        skills_lock = {}
+        lock["skills"] = skills_lock
+
+    bases = [cwd / ".agents" / "skills", cwd / ".claude" / "skills"]
+    stale = {
+        name
+        for name, entry in skills_lock.items()
+        if from_this_repo(entry) and name not in current
+    }
+
+    removed: set[str] = set()
+    for name in sorted(stale):
+        if any(git_tracked(base / name) for base in bases):
+            continue
+        for base in bases:
+            child = base / name
+            if child.exists() or child.is_symlink():
+                remove_path(child)
+        skills_lock.pop(name, None)
+        removed.add(name)
+
+    if removed:
+        lock["skills"] = dict(sorted(skills_lock.items()))
+        lock_path.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+        for name in sorted(removed):
+            print(f"install: removed leftover skill {name}")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except Exception as exc:
+        print(f"install: warning: leftover skill cleanup failed: {exc}", file=sys.stderr)
+        raise SystemExit(0) from exc
+PY
+  then
+    echo "install: warning: leftover skill cleanup failed" >&2
+    return 0
+  fi
+}
+
+if ((GLOBAL)); then
+  rm -rf "${HOME:?}/.agents/skills" "${HOME:?}/.claude/skills"
+  add "$SOURCE/machine" -g
+  add "$SOURCE" -g
+else
+  add "$SOURCE"
+  prune_stale_project_skills
+fi
