@@ -80,7 +80,8 @@ What each layer stops:
   parsing (set `allowInTypeGuards: true` in a schema-free project).
 - `no-known-value-widening` rejects `const h: Record<string, X> = {...}` when
   inference or `satisfies` would keep the known keys.
-- `no-module-mocking` bans `vi.mock` / `jest.mock` (see Testing below).
+- `no-module-mocking` bans `vi.mock` / `jest.mock` (module mocks pin
+  implementation; see the testing-craft skill).
 
 `tsconfig.json` non-negotiables:
 
@@ -201,16 +202,8 @@ tooling. Keep the public API of a module explicit.
 
 ## Testing (core 6)
 
-- Vitest or Jest; `tsc --noEmit` is part of the test gate (a green test suite
-  with type errors is not green).
-- Test behavior through the module's public surface. `vi.mock` / `jest.mock` are
-  lint errors (`anti-slop/no-module-mocking`); avoid `vi.spyOn` on your own
-  functions too. Both pin implementation. Use real implementations, a real
-  in-memory store, MSW for HTTP boundaries, real temp dirs.
-- `fast-check` for property-based tests. Deterministic: fake timers
-  (`vi.useFakeTimers`) instead of real `setTimeout` waits; inject the clock and
-  RNG.
-- Descriptive `describe`/`it` names that read as behavior sentences.
+See the testing-craft skill:
+[`testing-craft/languages/typescript.md`](../../testing-craft/languages/typescript.md).
 
 ## React: effect discipline
 
