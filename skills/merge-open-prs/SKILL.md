@@ -40,8 +40,8 @@ gh pr view <n> --json files,headRefName,headRefOid,baseRefName,isDraft,reviewDec
 gh pr diff <n>
 ```
 
-An unready PR (draft, requested changes, failing checks) stays in the work set.
-Make it mergeable; do not drop it, and do not merge over unanswered requested
+An unready PR (draft, requested changes) stays in the work set. Make it
+mergeable; do not drop it, and do not merge over unanswered requested
 changes without user direction.
 
 Check whether the PRs are already in a native stack:
@@ -153,8 +153,12 @@ Verify with the repo's own checks:
 
 - Baseline the default branch in the worktree so failures are attributable.
 - On the top branch (the post-merge tree): build, format, lint, and run the
-  tests for the stack's blast radius.
-- Let each PR's required checks finish; they still gate `gh stack merge`.
+  tests for the stack's blast radius. Wait for overall CI on that combined
+  tree. That is the gate. Do not require every intermediate PR to go green.
+- Inspect a failing check on a lower layer carefully. It may be flake, an
+  expected broken intermediate (see `references/conflicts.md`), or a hidden
+  problem the top-branch run missed. Proceed or retry only when you can name
+  why it is not a combined-tree defect; otherwise fix it on that layer.
 - After the merge, run the full suite on the actual default branch and confirm
   integration tests ran rather than skipped.
 
