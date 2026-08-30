@@ -74,7 +74,7 @@ git commit -m "$(cat <<'EOF'
 <Imperative subject line, no trailing period>
 
 <Body: explain WHY the change is needed and what it does, not a restatement of
-the diff. Wrap at ~80 columns.>
+the diff.>
 
 <attribution trailer required by the active global instructions, if any>
 EOF
@@ -86,6 +86,8 @@ Rules that always hold:
 - Imperative subject ("Fix the stale cache read...", "Reject empty payloads...").
 - The body carries the reasoning. Bump any shared version or sequence constants
   the change requires and say so.
+- Wrap git commit bodies at ~80 columns so `git log` is readable. Do not copy
+  that wrapping into a pull request or issue body.
 - Apply the standing attribution, punctuation, and `stop-slop` rules to the
   message and the PR body.
 
@@ -143,6 +145,10 @@ Do not commit the proof files.
 
 Notes:
 
+- Do not hard-wrap the PR body at a column width. Write markdown paragraphs as
+  one line each and break only between paragraphs, headings, and list items.
+  GitHub wraps in the UI; hard-wrapped source looks arbitrary in the editor and
+  when later edits reflow it.
 - Reference the issue with `Fixes #<n>` (or `Closes #<n>`) when the work started
   from one; many workstreams open with "plan and implement a fix for issue N".
 - Flex headings to fit the change while keeping the reason, implementation, and
