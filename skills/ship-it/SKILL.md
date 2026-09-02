@@ -2,7 +2,7 @@
 name: ship-it
 description: >
   Land a completed workstream by verifying it end to end, attaching proof with
-  gh-image, committing, opening a ready pull request, and driving every CI
+  --attach, committing, opening a ready pull request, and driving every CI
   check to green. Use when the user says "ship it", "commit and open a PR",
   "get CI green", "push this and watch CI", or otherwise asks the agent to
   finish and publish the current change.
@@ -12,8 +12,8 @@ user-invocable: true
 # Ship it: commit, open the PR, get CI green
 
 Finish with the change committed, pushed, open as a ready pull request, and green
-in CI. Invoking `$ship-it` authorizes that complete workflow, including uploading
-end-to-end proof with `gh-image`. Pause only for a material ambiguity, a required
+in CI. Invoking `$ship-it` authorizes that complete workflow, including attaching
+end-to-end proof with `--attach`. Pause only for a material ambiguity, a required
 approval, or a failure that cannot be resolved with the available access.
 
 Work on a feature branch, never the default branch (in a worktree if that is the
@@ -121,25 +121,44 @@ Fixes #<issue>.
 
 <Exact commands run and their results. If a check was not run, say why.>
 
-<What was exercised end to end, and the gh-image proof embeds.>
+<What was exercised end to end.>
 
-<attribution footer required by the active global instructions, if any>
+![Happy path](/abs/path/happy.png)
+
+![](/abs/path/walkthrough.mp4)
 EOF
-)"
+)" \
+  --attach '/abs/path/happy.png' \
+  --attach '/abs/path/walkthrough.mp4'
 ```
 
-Upload the local proof with the `github-image-upload` skill (`gh image`) before
-or as you write that Testing section. Read that skill and follow it for
-prerequisites, path resolution, and embed safety. Invoking `$ship-it` is
-confirmation to upload the proof files: state the files and the destination
-repo, then upload. Do not install or upgrade the extension yourself.
+Attach screenshots and recordings with `--attach` on the same `gh pr create` or
+`gh pr edit` that writes the body. Requires `gh` 2.99.0+. Check `gh --version`;
+if it is older, stop and tell the user to upgrade (`brew upgrade gh`, or the
+install they use). Do not upgrade `gh` yourself.
 
-- On a new PR, put the returned markdown in the Testing section of the body you
-  write.
-- On an existing PR, append the proof with that skill's description pipeline.
-  Testing lives in the PR body, not a comment.
-- If the extension is missing or the upload fails, stop and tell the user. Do
-  not ship without proof, and do not substitute another host.
+`$ship-it` is confirmation to attach the proof files: state the files, then
+attach.
+
+`--attach` accepts png, jpg, jpeg, gif, webp, svg, mp4, mov, and webm. Put a
+Markdown image in Testing whose destination is the same path you pass to
+`--attach`. Quote `--attach` values. `gh` rewrites that path to a
+`user-attachments` URL and keeps the alt text from the Markdown. A video
+renders as a player only when its image reference is the whole paragraph, with
+empty alt: `![](/abs/path/walkthrough.mp4)`. Omit the image refs and `--attach`
+flags when there is no media.
+
+Put a command transcript or log in Testing as a fenced code block. `--attach`
+rejects non-media files.
+
+On an existing PR, put the same refs in the body you write and pass `--attach`
+on `gh pr edit`. Testing lives in the PR body, not a comment. If you are only
+adding proof and not rewriting the body,
+`gh pr edit <n> --attach '/abs/path/shot.png#After the fix'` appends it.
+
+If attach fails, stop and tell the user. Partial success still creates or
+updates the PR and prints its URL, then exits non-zero: treat that as failure
+until every intended file is in Testing.
 
 Do not commit the proof files.
 
@@ -159,8 +178,8 @@ Notes:
 - Base the default branch. Create a normal ready PR, with no labels or reviewers
   unless asked. Do not add an agent-specific title prefix.
 - Before watching CI, verify the final PR's base, head, readiness, title, body,
-  and URL with `gh pr view`. Confirm the Testing section contains the
-  `user-attachments` proof (or the no-runtime-surface sentence).
+  and URL with `gh pr view`. Confirm Testing contains the `user-attachments`
+  proof, the fenced transcript, or the no-runtime-surface sentence.
 
 ## 4. Get CI green
 

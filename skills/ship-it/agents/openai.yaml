@@ -1,4 +1,4 @@
 interface:
   display_name: "Ship It"
   short_description: "Verify end to end, attach proof, open a PR, drive CI green"
-  default_prompt: "Use $ship-it to verify this work end to end, attach proof with gh-image, commit, open a ready pull request, and drive every CI check to green."
+  default_prompt: "Use $ship-it to verify this work end to end, attach proof with --attach, commit, open a ready pull request, and drive every CI check to green."
