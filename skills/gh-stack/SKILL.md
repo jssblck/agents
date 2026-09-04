@@ -42,7 +42,7 @@ Agent harnesses differ, so always pass the flags below instead of relying on tha
 |---|---|---|
 | `gh stack view --json` | `gh stack view` | opens a TUI under a PTY |
 | `gh stack submit --auto` | `gh stack submit` | prompts for a title per new PR |
-| `gh stack merge <target> --yes` | `gh pr merge` | `gh pr merge` cannot merge a stack |
+| `gh stack merge <target> --yes` | `gh stack merge` | scopes an explicitly requested whole-stack merge |
 | `gh stack init <branch>...` | `gh stack init` | prompts for branch names |
 | `gh stack add <branch>` | `gh stack add` | prompts for a name, and fails even when piped |
 | `gh stack checkout <target>` | `gh stack checkout` | opens a selection menu |
@@ -97,7 +97,13 @@ diverged, `sync` prints both chains, makes no changes, and exits 0 with `Sync ab
 
 ## Merging
 
-Scope the merge with an argument:
+Jess's default for landing multiple PRs is sequential merging through the forge.
+Use [merge-open-prs](../merge-open-prs/SKILL.md): merge the parent first, update
+and verify the next PR against the current default branch, then merge it.
+Do not turn a request to merge open PRs into one combined stack operation.
+
+Use the commands below only when the user requests a whole-stack merge.
+Scope that merge with an argument:
 
 ```bash
 gh stack merge 42 --yes          # PR #42 plus every unmerged PR below it

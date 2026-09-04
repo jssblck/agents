@@ -16,8 +16,9 @@ pytest
 `ruff` is the locked default: one fast tool for both format and lint (it replaces
 black, isort, flake8, and pyupgrade). `pyproject.toml` is the single config home.
 Run a type checker in CI in strict mode: untyped Python silently rots. Pin Python
-version and dependencies (uv, poetry, or pip-tools). See
-[`../principles/new-project-defaults.md`](../principles/new-project-defaults.md).
+version and dependencies (uv, poetry, or pip-tools) when setting up a repository.
+Follow existing tooling during ordinary edits. For requested repository setup,
+see [project-bootstrap](../../project-bootstrap/SKILL.md).
 
 ```toml
 [tool.mypy]

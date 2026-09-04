@@ -27,8 +27,8 @@ block with a language tag.
 
 ## Prerequisites
 
-1. `gh auth status` — if it fails, tell the user to run `gh auth login`.
-2. `gh --version` — needs 2.99.0+. If older, stop and tell the user to upgrade
+1. `gh auth status`: if it fails, tell the user to run `gh auth login`.
+2. `gh --version`: needs 2.99.0+. If older, stop and tell the user to upgrade
    (`brew upgrade gh`, or the install they use). Do not upgrade `gh` yourself.
 
 ## Attach

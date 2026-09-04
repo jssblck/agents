@@ -8,7 +8,8 @@ user-invocable: true
 
 Snapshot the open PRs. That list is the work set. Merge each PR through the
 forge, one at a time, in an order that keeps later PRs updateable onto the
-default branch.
+default branch. Do not assemble independent PRs into a stack or replace the
+work set with one combined PR.
 
 Standing rules:
 

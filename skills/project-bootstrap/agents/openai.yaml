@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Bootstrap"
+  short_description: "Set up a repository with Jess's tooling defaults"
+  default_prompt: "Use $project-bootstrap to set up this repository with Jess's defaults for the requested scope."

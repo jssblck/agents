@@ -1,61 +1,42 @@
 # Doc gardening
 
-In agent-managed repos, docs are the top merge-conflict hotspot: measured over
-real history, AGENTS.md and README beat every source file, because every
-change routes an edit through them. Most of that routed content should never
-have been written. The rule is to write less, deleting more, and
-putting what remains where only the relevant changes touch it.
+Keep instructions useful to a fresh reader without duplicating the repository.
+Reduce shared-doc churn when it causes conflicts; do not delete useful guidance
+merely because a tool can rediscover it.
 
-## What each layer is for
+## What belongs where
 
-**AGENTS.md / CLAUDE.md hold scars and invariants. Nothing else.**
+AGENTS.md and CLAUDE.md hold working agreements, non-obvious constraints, and
+concise entry points for setup and validation.
 
-- Scars: hard-won, non-obvious constraints from development. The bug class
-  that recurred, the design question that gets re-litigated every session,
-  the footgun an agent will hit unless warned, the approach that looks right
-  and fails. If learning it cost a session, write it down.
-- Invariants: the rules that must hold. "Gates fail closed." "Never bump the
-  crate version." "These two directories stay byte-identical."
-- Not working state: no status sections, no progress logs, no TODO lists, no
-  "currently implementing X". State belongs in issues, branches, or code.
-- Not indexes or restatements: no subcommand lists, no command help output,
-  no file inventories, no directory trees, no dependency lists. An agent
-  discovers all of these with a glob or a `--help` in seconds, and the
-  written copy only goes stale.
+- Record intent and lessons that change an agent's decisions: why an obvious
+  approach fails, an invariant, or a recurring failure.
+- Keep the canonical setup and check commands easy to find. A short command
+  remains useful even when it also appears in package scripts.
+- Point to relevant module documentation rather than copying its detail.
+- Avoid exhaustive file inventories, duplicated command help, and task status.
 
-**User docs (README, guides) tell humans and agents how to use the product.**
-Task-oriented: concepts, workflows, the decisions the user must make. The
-same restraint applies: do not restate what the tool already reports (flag
-inventories, subcommand lists, default values `--help` prints).
+README and user guides explain concepts and common workflows. Keep enough
+examples and commands for a reader to use the product without reconstructing
+the intended procedure from source code.
 
-## The discoverability test
+## Decide what to keep
 
-Before writing a fact into any doc: could a fresh agent learn this with one
-grep, one glob, or one `--help`, in under a minute? If yes, do not write it,
-and delete it if it is already there. Write down only what cannot be
-discovered: intent, constraints, and why the obvious approach fails.
+Ask whether the text saves meaningful discovery work or prevents a likely
+mistake. Prefer a concise entry point or link when a maintained source already
+contains the detail.
 
-## Pruning
+Do not reproduce full flag lists or directory trees that add no explanation.
+Discoverability alone is not a reason to delete a setup step, test command,
+or useful example.
 
-- Every edit to an instruction file should look for something to delete. A
-  stale entry is worse than a missing one, because a missing fact gets looked
-  up while a stale one gets trusted.
-- Working state rots fastest. PROGRESS.md-style files, "implemented so far"
-  sections, and checklists become disinformation the week the state changes.
-  Delete them on sight, converting any durable lesson into a scar first.
-- When a scar's underlying constraint disappears (the API changed, the
-  footgun was fixed), remove the scar in the same change that removes the
-  constraint.
+## Prune within scope
 
-## Sharding
+Remove stale or duplicated guidance when maintaining the relevant document.
+Remove a historical constraint when the underlying limitation is gone.
+Do not delete progress files, plans, or user-maintained checklists merely
+because they are not suitable for AGENTS.md.
 
-- The root AGENTS.md or CLAUDE.md holds the invariants, the scars, and at
-  most one line per module pointing at that module's own doc. Per-module
-  detail lives in per-module docs (a developer-guide file per area, or a doc
-  next to the module).
-- A feature change updates its module's doc. The root changes only when a
-  module appears or disappears, or an invariant changes. That is what takes
-  the root file out of every commit's blast radius.
-- Symptom to fix on sight: the root doc carries a paragraph-length
-  architecture entry per module that duplicates the module docs. Shrink each
-  entry to a line and a link, moving anything unique into the module doc.
+Keep the root instructions stable. Put specialized guidance near the module
+it governs, and update the root only when shared expectations or entry points
+change.

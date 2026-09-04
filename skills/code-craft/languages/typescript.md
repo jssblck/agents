@@ -3,103 +3,19 @@
 How the universal core is spelled in TypeScript, plus TS/JS-specific idioms. The
 overriding rule: let the type system do work, and keep `any` out.
 
-## Tooling baseline
+## Tooling
 
-Default to the oxc toolchain: `oxfmt` for formatting and `oxlint` for linting,
-not Prettier + ESLint and not Biome:
+Follow the project's formatter, linter, and TypeScript configuration. Do not
+replace tooling or install additional lint plugins during ordinary coding.
 
-```sh
-oxfmt --check .            # format check (oxfmt --write . applies)
-oxlint --type-aware .      # lint, including type-aware rules
-tsc --noEmit               # type-check (oxlint does not replace tsc; CI must run this)
-```
+When repository setup is requested, Jess's defaults are `oxfmt`, `oxlint`,
+and `tsc --noEmit`; see [project-bootstrap](../../project-bootstrap/SKILL.md).
+Enable restrictions only where their scope fits the project.
 
-One `.oxlintrc.json`, committed. `--type-aware` needs `oxlint-tsgolint` and a
-`tsconfig.json`; it turns on `no-floating-promises`, `no-misused-promises`, and
-`switch-exhaustiveness-check`. See
-[`../principles/new-project-defaults.md`](../principles/new-project-defaults.md).
-
-### Ban the type-system escape hatches (default)
-
-Turn `any` into an error, and while you are there ban the other ways code lies to
-the checker. This is the default for new TS projects. Vendor
-[anti-slop](https://github.com/dmmulroy/anti-slop) (`npx skills add
-dmmulroy/anti-slop --skill install-anti-slop`, then ask the agent to install it)
-and enable every rule:
-
-```jsonc
-// .oxlintrc.json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "ignorePatterns": ["tools/oxlint/anti-slop/**", ".agents/**", ".claude/**", ".codex/**"],
-  "jsPlugins": [{ "name": "anti-slop", "specifier": "./tools/oxlint/anti-slop/index.ts" }],
-  "categories": { "correctness": "error" },
-  "rules": {
-    "typescript/no-explicit-any": "error",
-    "typescript/no-non-null-assertion": "error",
-    "typescript/no-floating-promises": "error",
-    "typescript/no-misused-promises": "error",
-    "typescript/switch-exhaustiveness-check": "error",
-    "eqeqeq": "error",
-    "no-empty": "error",
-    "prefer-const": "error",
-    "anti-slop/no-chained-type-assertions": "error",
-    "anti-slop/no-conditional-empty-object-spread": "error",
-    "anti-slop/no-known-value-widening": "error",
-    "anti-slop/no-module-mocking": "error",
-    "anti-slop/no-object-parameters": "error",
-    "anti-slop/no-reflect-apply": "error",
-    "anti-slop/no-reflect-get": "error",
-    "anti-slop/no-runtime-typeof": "error",
-    "anti-slop/no-shape-in-symbol-names": "error",
-    "anti-slop/no-unknown-parameters": "error",
-    "anti-slop/no-unknown-returns": "error",
-    "anti-slop/no-unknown-type-aliases": "error",
-    "anti-slop/no-unsafe-dictionary-type": "error",
-    "anti-slop/no-widen-then-assert": "error",
-    "anti-slop/require-safety-comment-for-type-assertion": "error"
-  }
-}
-```
-
-The plugin is TypeScript ESM, so `package.json` needs `"type": "module"` and
-`@oxlint/plugins` must be installed at the same version as `oxlint`.
-
-What each layer stops:
-
-- `no-explicit-any` bans `any`; `no-non-null-assertion` bans `!` (handle the
-  null); `no-floating-promises` bans dropped rejections.
-- `require-safety-comment-for-type-assertion` allows `as` only behind a
-  `// SAFETY:` line that names the checked invariant, and `no-chained-type-assertions`
-  and `no-widen-then-assert` close the `as unknown as T` and widen-then-cast
-  laundering routes. Parse, do not assert.
-- `no-unknown-parameters`, `no-unknown-returns`, `no-object-parameters`, and
-  `no-unsafe-dictionary-type` keep `unknown`, `object`, and `Record<string, unknown>`
-  out of function contracts; parse at the boundary and pass named types inward.
-- `no-runtime-typeof` rejects ad hoc `typeof` narrowing in favor of schema
-  parsing (set `allowInTypeGuards: true` in a schema-free project).
-- `no-known-value-widening` rejects `const h: Record<string, X> = {...}` when
-  inference or `satisfies` would keep the known keys.
-- `no-module-mocking` bans `vi.mock` / `jest.mock` (module mocks pin
-  implementation; see the testing-craft skill).
-
-`tsconfig.json` non-negotiables:
-
-```jsonc
-{
-  "compilerOptions": {
-    "strict": true,                     // the whole strict family
-    "noUncheckedIndexedAccess": true,   // arr[i] is T | undefined; huge bug catcher
-    "exactOptionalPropertyTypes": true,
-    "noImplicitOverride": true,
-    "noFallthroughCasesInSwitch": true
-  }
-}
-```
-
-`strict: true` is the floor, not the ceiling. `noUncheckedIndexedAccess` in
-particular turns a whole class of "undefined is not a function" runtime crashes
-into compile errors.
+Keep `any` and unchecked assertions out of application logic. Boundary parsers
+may accept `unknown`, and adapters may return it until the caller parses it.
+Use schema libraries already in the project, or focused type guards when a
+dependency would add more complexity than the parser.
 
 ## Illegal states (core 1, 4)
 
@@ -128,9 +44,9 @@ into compile errors.
   Now a bare `string` will not pass where `UserId` is required. Brand IDs, units,
   and validated values.
 - `unknown`, never `any`. `any` disables the type checker locally and infectiously.
-  Parse `unknown` at the boundary into a named type; do not let `unknown` into
-  function signatures. If you must escape, `as` with a `// SAFETY:` comment and
-  a runtime check, not `any`.
+  Parse `unknown` at the boundary into a named type; boundary function signatures
+  may accept it. Narrow with a schema or a type guard before use. If an assertion
+  is necessary, explain the invariant the checker cannot express.
 - `readonly` and `as const` for immutability; `satisfies` to check a literal
   against a type without widening it.
 - Prefer unions of string literals over `enum` (enums have surprising runtime
@@ -139,8 +55,8 @@ into compile errors.
 
 ## Parse, don't validate (core 2)
 
-- **Schema-parse external data at the boundary** with zod, valibot, or arktype.
-  The schema is the parser and the type source:
+- **Parse external data at the boundary.** Use the project's schema library
+  or a focused type guard. With a schema, derive the static type from it:
   ```ts
   const Config = z.object({ port: z.number().int().positive(), host: z.string() });
   type Config = z.infer<typeof Config>;
@@ -148,9 +64,8 @@ into compile errors.
   ```
   Do not hand-write `isValidConfig(x): boolean` and keep passing the raw object.
   Parse once, pass `Config` inward.
-- This matters more in TS than anywhere else: `JSON.parse` returns `any`, network
-  responses are lies, `process.env` values are `string | undefined`. Every one of
-  those is a boundary that must be parsed, not trusted.
+- `JSON.parse` returns `any`, network payloads need runtime checks, and
+  `process.env` values are `string | undefined`. Parse them before application use.
 - `z.infer` so the static type and the runtime check cannot drift.
 
 ## Errors (core 3)
@@ -213,44 +128,19 @@ effect) turn a component from a readable tree into a timeline that a reader,
 human or agent, must simulate step by step. Default to zero effects; see
 [You Might Not Need an Effect](https://react.dev/learn/you-might-not-need-an-effect).
 
-- **Never** use an effect for:
+- Prefer these alternatives to effects:
   - Derived state: compute it during render (`useMemo` if expensive).
   - Resetting state when a prop changes: pass a `key` instead.
   - Reacting to a user event: put the logic in the event handler.
   - Data fetching: use the project's data-fetching layer (TanStack Query, SWR,
     or the framework loader), which handles races, caching, and cancellation.
 - **Allowed:** synchronizing with an external system: DOM APIs, subscriptions,
-  timers, third-party widgets, analytics. Every such effect returns a cleanup
-  function and lists honest dependencies. For external stores, prefer
+  timers, third-party widgets, analytics. Clean up resources or subscriptions
+  when needed, and list accurate dependencies. For external stores, prefer
   `useSyncExternalStore` over a hand-rolled subscribe effect.
-- **Ban the import in product code (default).** External-system effects live in
-  a small allow-listed directory of wrapper hooks (`useEventListener`,
-  `useInterval`, the analytics hook); components compose those wrappers and
-  stay effect-free. Ban `useLayoutEffect` with the same rule, or it becomes the
-  dodge:
-  ```jsonc
-  // .oxlintrc.json additions
-  "plugins": ["react"],
-  "rules": {
-    "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "error",
-    "no-restricted-imports": ["error", {
-      "paths": [{
-        "name": "react",
-        "importNames": ["useEffect", "useLayoutEffect"],
-        "message": "Derive during render, handle in the event handler, or use the data-fetching layer. External-system sync goes in src/hooks/effects/."
-      }]
-    }]
-  },
-  "overrides": [
-    { "files": ["src/hooks/effects/**"], "rules": { "no-restricted-imports": "off" } }
-  ]
-  ```
-  The allow-listed wrappers still obey the hooks rules: never suppress
-  `exhaustive-deps` (a mount-only effect with silenced dependencies captures
-  stale props and state), and do not add a `useMountEffect`-style wrapper that
-  hides the dependency array. In review, reject `React.useEffect` member calls;
-  with the modern JSX transform nothing needs the React namespace import.
+- Extract a wrapper hook when it provides reuse or a clearer lifecycle boundary.
+  Do not create a wrapper directory solely to prohibit effect imports. Keep
+  dependencies accurate and do not suppress hook lint rules to hide stale state.
 
 ## Anti-patterns to refuse
 
@@ -258,5 +148,5 @@ human or agent, must simulate step by step. Default to zero effects; see
 handling the null; `as` casts that lie about runtime shape; `enum` by reflex;
 floating promises; empty `catch`; `JSON.parse` result used untyped; boolean-flag
 soup instead of a discriminated union; default exports everywhere; mocking your
-own modules; `==` (use `===`). The oxlint + anti-slop config above makes every
-one of these a hard error rather than a review nit.
+own modules without a contract-level reason; `==` (use `===`). Follow the
+project's enforced rules rather than installing new gates during a code change.
