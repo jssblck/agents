@@ -2,11 +2,11 @@
 name: github-image-upload
 description: >-
   Attach local images and videos to a pull request, issue, or comment with
-  gh --attach, or put a text transcript in a fenced code block. Use when
-  asked to "attach a screenshot to the PR", "add an image to the PR
-  description", "put this image in the issue", "show test results in the
-  PR", "embed before/after screenshots", or otherwise attach visual proof
-  to GitHub.
+  gh --attach. Inline text (a transcript, log, or command output) in a fenced
+  code block with a language tag. Use when asked to "attach a screenshot to
+  the PR", "add an image to the PR description", "put this image in the
+  issue", "show test results in the PR", "embed before/after screenshots",
+  or otherwise put visual or text proof on GitHub.
 license: MIT
 compatibility: Requires GitHub CLI (`gh`) 2.99.0 or newer, and network access to GitHub.
 allowed-tools: >-
@@ -22,6 +22,9 @@ allowed-tools: >-
 issue, pull request, or comment: `gh issue create`, `gh issue edit`,
 `gh issue comment`, `gh pr create`, `gh pr edit`, and `gh pr comment`.
 
+`--attach` is for images and videos. Inline text in the body as a fenced code
+block with a language tag.
+
 ## Prerequisites
 
 1. `gh auth status` — if it fails, tell the user to run `gh auth login`.
@@ -30,8 +33,9 @@ issue, pull request, or comment: `gh issue create`, `gh issue edit`,
 
 ## Attach
 
-State the files and the destination, then attach. Quote `--attach` values.
-`--attach` accepts png, jpg, jpeg, gif, webp, svg, mp4, mov, and webm.
+State the image and video files and the destination, then attach. Quote
+`--attach` values. `--attach` accepts png, jpg, jpeg, gif, webp, svg, mp4, mov,
+and webm.
 
 If you are writing the body, put a Markdown image whose destination is the
 same path you pass to `--attach`. `gh` rewrites that path to a
@@ -59,18 +63,30 @@ gh pr edit 13 --attach '/abs/path/shot.png#The login error state'
 `#` alt on the flag applies only when the body does not already reference the
 file. Repeat `--attach` for each file.
 
-Put a command transcript or log in the body as a fenced code block.
-
 If attach fails, stop and tell the user. Partial success still creates or
 updates the item and prints its URL, then exits non-zero: treat that as
 failure until every intended file is present.
 
 Do not commit the attached files.
 
+## Text
+
+Inline a transcript, log, or other text in the body as a fenced code block.
+Set the language to match the content: `console` for a shell transcript,
+`json` for JSON, `diff` for a diff, `text` when nothing else fits. Do not pass
+text files to `--attach`.
+
+````markdown
+```console
+$ pnpm test
+PASS  src/foo.test.ts
+```
+````
+
 ## Verify
 
-Count matches instead of printing the body. Expect at least 1 (use
-`gh issue view <n>` for issues):
+After `--attach`, count matches instead of printing the body. Expect at least 1
+(use `gh issue view <n>` for issues):
 
 ```sh
 gh pr view <pr> --repo owner/repo --json body,comments \
@@ -79,3 +95,7 @@ gh pr view <pr> --repo owner/repo --json body,comments \
 
 0 means the attach failed. Re-run the attach command. On a private repo the
 URL renders only for authorized viewers; an anonymous 404/403 is expected.
+
+When the proof is only inlined text, confirm the language-tagged fence is in
+the body. A missing `user-attachments` URL is not a failure if you did not
+attach media.
