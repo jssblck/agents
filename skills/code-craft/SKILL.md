@@ -1,6 +1,6 @@
 ---
 name: code-craft
-description: Use when writing, reviewing, or refactoring code, or scaffolding a new project. Language-agnostic principles (types encode invariants, parse don't validate, errors as values, earn abstractions) with dialects for Rust, TypeScript, Go, and Python. Testing guidance lives in the testing-craft skill.
+description: Write, review, or refactor code with clear boundaries, useful types, and minimal abstractions. Follow existing project conventions. Use project-bootstrap only when repository setup is requested.
 user-invocable: true
 argument-hint: "[rust|typescript|go|python] [target]"
 ---
@@ -13,17 +13,16 @@ the same everywhere; only the spelling changes.
 
 ## How to use this skill
 
-1. **Apply the universal core below.** These hold in every language. They are
-   the decisions that survive a rewrite into another language.
+1. **Apply the core below where it improves the requested change.** These are
+   defaults, not reasons to refactor unrelated code.
 2. **Detect the language(s) in scope** from the files being touched (see the
-   detection guide), then **read `languages/<lang>.md`**. That file shows how
-   each universal principle is spelled in that language, plus the idioms and
-   tooling unique to it. Load only the language(s) you are working in.
+   detection guide), then **read `languages/<lang>.md` when needed** for its
+   idioms and tooling. Load only the language(s) you are working in.
 3. **Read `principles/<name>.md` for depth** when a principle is the crux of the
    change (a boundary redesign, an error-model decision). The core below is the
    summary; the principle file is the workflow and the nuance.
-4. Run the project's own formatter, type-check, linter, and tests before
-   claiming done. The language file names the concrete commands.
+4. Run the project's required checks and verification appropriate to the change.
+   A review does not require running the full suite. Report checks not performed.
 
 ## Universal core
 
@@ -40,11 +39,10 @@ Depth: [`principles/illegal-states.md`](principles/illegal-states.md).
 
 ### 2. Parse, don't validate
 
-At every boundary where weak external data enters (config, JSON/TOML, CLI/env,
-network, user edits), convert it once into a proof-carrying type and pass that
-type inward. Do not write `validate(x) -> bool/void` and then keep passing the
-raw value; return the refined value. If a caller can skip the parse and still
-type-check, the design is not done. Depth:
+At boundaries where external data enters (config, JSON/TOML, CLI/env, network,
+user edits), parse it into a usable type and pass that value inward. Prefer
+returning refined data over validating and continuing to pass the raw value.
+Use the language's type system where it reduces misuse. Depth:
 [`principles/parse-dont-validate.md`](principles/parse-dont-validate.md).
 
 ### 3. Errors are values; gates fail closed
@@ -58,10 +56,9 @@ a block, never a quiet pass. Depth:
 
 ### 4. No stringly-typed data; newtypes over primitives
 
-A `String`/`string`/`str` that is really an email, a user id, a path, or a state
-is a bug waiting to happen. Wrap distinct domain values in distinct types so the
-compiler stops you from passing a `UserId` where an `OrderId` belongs, and so
-parsing happens once. This is the everyday form of principle 1. Depth:
+Use distinct types when mixing domain values would be a meaningful error, or
+when a constructor preserves a useful invariant. Do not wrap every primitive
+solely to replace its name. This is the everyday form of principle 1. Depth:
 [`principles/illegal-states.md`](principles/illegal-states.md).
 
 ### 5. Mind ownership and copies, but clarity first
@@ -98,24 +95,17 @@ measure again. Premature abstraction and premature optimization are the same
 mistake (acting on a future that has not arrived). Depth:
 [`principles/simplicity.md`](principles/simplicity.md).
 
-### 9. New projects: take the defaults
+### 9. Keep repository setup separate
 
-When starting a new project (or hardening a young one), do not re-litigate
-tooling. Lock in one opinionated auto-formatter and one linter per language and
-run the full check suite from one recipe in both CI and a pre-commit hook (so
-they never drift), add a deterministic agent-rules layer that also gates in CI
-and an agentic review gate over each changeset, ship CLI binaries via
-tag-triggered releases with checksummed install scripts, and scaffold the
-community/governance files. License is the one
-decision the agent must ask about: AGPL-3.0-or-later or Apache-2.0, nothing else.
-The picks and the full checklist are in
-[`principles/new-project-defaults.md`](principles/new-project-defaults.md).
+Follow the existing toolchain. Ordinary coding, prototyping, and hardening do
+not authorize new governance files, agent review gates, or release infrastructure.
+When the user requests repository setup, use
+[`project-bootstrap`](../project-bootstrap/SKILL.md) for Jess's defaults.
 
 ## Language router
 
-Detect the language, then read its file. Each maps the principles into the
-dialect and adds what is unique to that language (tooling, concurrency model,
-naming, project layout, idioms to reach for, anti-patterns to refuse).
+Read the relevant language file when its details are needed: tooling,
+concurrency, naming, project layout, and language-specific patterns.
 
 | Language | File | Detect by |
 |---|---|---|

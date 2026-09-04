@@ -1,245 +1,116 @@
 ---
 name: ship-it
-description: >
-  Land a completed workstream by committing, opening a draft pull request,
-  verifying it end to end, putting testing proof in the PR, marking the PR
-  ready, and driving every CI check to green. Use when the user says "ship
-  it", "commit and open a PR", "get CI green", "push this and watch CI", or
-  otherwise asks the agent to finish and publish the current change.
+description: Commit and publish a completed change as a pull request, add verification evidence with gh --attach, and drive CI green. Use for "ship it", "commit and open a PR", or "push this and watch CI". CI-only requests must not expand into PR creation or readiness changes.
 user-invocable: true
 ---
 
-# Ship it: commit, open a draft PR, verify, mark ready, get CI green
+# Ship it
 
-Finish with the change committed, pushed, open as a ready pull request, and green
-in CI. Open the PR as a draft before local checks so CI can start while you
-verify. Mark it ready and put testing proof in the PR only after those checks
-pass. Invoking `$ship-it` authorizes that complete workflow, including putting
-end-to-end proof in the PR. Pause only for a material ambiguity, a required
-approval, or a failure that cannot be resolved with the available access.
+For a full shipping request, finish with the change committed, pushed, open as a
+ready pull request, and green in CI. Open a new PR as a draft so CI can run while
+you verify locally. Mark it ready only after verification succeeds.
 
-Work on a feature branch, never the default branch (in a worktree if that is the
-repo's flow). If you are already on a feature branch, stay on it. Follow the
-repo's branch-naming convention. When the repo has none and a branch is needed,
-use the `agent/` prefix.
+A narrower request keeps its scope. For CI-only repair, fix the affected branch
+and checks without creating a PR or changing its draft/ready state, base, title,
+or unrelated content. For monitoring only, report results without making fixes.
+An explicit request to keep a draft takes precedence over the full workflow.
 
-## 1. Commit
+Do not merge the PR unless asked. Pause only for material ambiguity, a required
+approval, or a blocker that cannot be resolved with available access.
 
-Inspect the complete diff and the working tree before staging. Preserve unrelated
-user changes. Group related files into logical commits and stage explicit paths.
-Write each message with a clean body:
+## Commit the requested work
 
-```sh
-git add <paths>
-git commit -m "$(cat <<'EOF'
-<Imperative subject line, no trailing period>
+Work on a feature branch, not the default branch. Stay on the current feature
+branch when it owns the change; otherwise follow the repo's naming convention,
+or use `agent/` when none exists.
 
-<Body: explain WHY the change is needed and what it does, not a restatement of
-the diff.>
+Inspect the diff and working tree. Preserve unrelated user changes and stage
+explicit paths. Group related files into logical commits.
 
-<attribution trailer required by the active global instructions, if any>
-EOF
-)"
-```
+Use an imperative subject. Explain the reason for the change where it is not
+obvious from the subject. Follow active attribution and punctuation instructions.
+Wrap commit bodies around 80 columns, but do not hard-wrap PR paragraphs.
+Apply `stop-slop` to Git text.
 
-Rules that always hold:
+## Open or reuse the PR
 
-- Imperative subject ("Fix the stale cache read...", "Reject empty payloads...").
-- The body carries the reasoning. Bump any shared version or sequence constants
-  the change requires and say so.
-- Wrap git commit bodies at ~80 columns so `git log` is readable. Do not copy
-  that wrapping into a pull request or issue body.
-- Apply the standing attribution, punctuation, and `stop-slop` rules to the
-  message and the PR body.
-
-## 2. Open a draft PR
-
-Push the branch and open a draft PR before running local checks:
+For a full shipping request, push and check for an existing PR:
 
 ```sh
 gh pr list --state open --head <branch> --json number,title,url,isDraft,baseRefName,headRefName
 ```
 
-Reuse the existing PR when present. Update its title and body, and correct its
-base if needed. Do not mark it ready yet. Do not convert a ready PR back to
-draft. Otherwise, create a draft with a self-contained body. Omit Testing; that
-section is added after local checks pass.
+Reuse the existing PR. Do not convert a ready PR back to draft. Otherwise, create
+a draft with `gh pr create --draft`. Use the default branch as the base unless
+this is a dependent layer in an existing stack or the user specified another base.
+
+Explain why the change is needed and what changed. Reference the originating
+issue with `Fixes #<n>` when applicable. Preserve existing context when editing
+the body. Do not add labels or reviewers unless requested.
+
+## Verify proportionally
+
+Read the repo's check commands. Run required local checks and the tests that
+cover the changed behavior. Generate required code before building.
+
+- Include integration tests when the change reaches that boundary. Confirm
+  relevant tests ran rather than silently skipped.
+- Existing automated end-to-end tests can supply runtime evidence. Do not repeat
+  their coverage manually without a distinct risk to check.
+- Use manual interaction for uncovered integration or visual risks. Exercise
+  representative affected flows rather than every route sharing a component.
+  Check responsive layouts when the change affects them.
+- For CLI or API behavior, a focused test or real command/request can supply
+  evidence. Choose the method that catches the risk.
+- For changes with no runtime surface, state that no runtime capture was needed.
+- Report local environment gaps and let CI cover checks that require its platform.
+
+After passing checks, repeat or broaden verification only for new edits, failures,
+or unresolved risks. Do not refactor unrelated code to improve the verification
+process. Commit and push any necessary fixes.
+
+## Add evidence and mark ready
+
+For a full shipping request, add a Testing section with exact commands, results,
+and relevant gaps. Use existing automation output when sufficient.
+
+Inline concise text evidence in a language-tagged fence: `console` for a command
+transcript, `json` for JSON, or `text` for other output. Remove secrets and private
+data from proof before publishing it.
+
+Attach useful screenshots or recordings with `gh --attach`, not `gh-image`.
+Follow [github-image-upload](../github-image-upload/SKILL.md) for supported media,
+attachment syntax, and verification. No media is required when text evidence
+covers the change. Do not commit proof files.
+
+Invoking this full workflow authorizes adding its proof to the PR. Keep evidence
+in the PR body, preserve its existing explanation, and keep any required
+attribution footer last.
+
+After local verification, mark the PR ready unless the user asked to keep it a
+draft. Skip readiness changes for CI-only requests. Verify the intended PR base,
+head, state, and evidence with `gh pr view`.
+
+## Drive CI green
+
+Watch the complete check set so a filtered view cannot hide a failure:
 
 ```sh
-gh pr create --draft --base <default-branch> --head <branch> \
-  --title "<same imperative style as the commit subject>" \
-  --body "$(cat <<'EOF'
-## Why this change
-
-Fixes #<issue>.
-
-<What is wrong today and why it matters.>
-
-## What changed
-
-<What the change does, as a short bulleted list.>
-EOF
-)"
-```
-
-Notes:
-
-- Do not hard-wrap the PR body at a column width. Write markdown paragraphs as
-  one line each and break only between paragraphs, headings, and list items.
-  GitHub wraps in the UI; hard-wrapped source looks arbitrary in the editor and
-  when later edits reflow it.
-- Reference the issue with `Fixes #<n>` (or `Closes #<n>`) when the work started
-  from one; many workstreams open with "plan and implement a fix for issue N".
-- Flex headings to fit the change while keeping the reason and implementation
-  easy to find. Include configuration instructions only when setup or runtime
-  configuration changed. A short fenced code block for a key type or signature
-  is useful when it clarifies the change.
-- Add an attribution footer only when the active global instructions require it.
-- Base the default branch. Create a draft, with no labels or reviewers unless
-  asked. Do not add an agent-specific title prefix.
-
-## 3. Verify locally
-
-Run the repo's own checks, cheapest first. Find them in the contributor docs or
-the CI config; do not assume a toolchain. If verification produces further diffs,
-commit and push them. Keep the PR a draft until the checks pass.
-
-- **Generate first if the repo has a codegen step.** If some code is generated
-  (and may be gitignored or must be refreshed after a source edit), run that step
-  before building; skipping it produces confusing "undefined symbol" build errors
-  that are not real.
-- **Mirror what CI runs.** Read the CI config (or the contributor docs) to see the
-  real checks, then run them locally so CI is not the first place you see a
-  failure: the repo's formatter, its linter, its pre-commit checks, its build, and
-  the tests for what you touched.
-- **Know your local gaps.** Some checks cannot run on your machine (a tool or
-  platform CI has that you do not). Run what you can, note the gap, and let CI
-  cover it rather than treating a local-environment limitation as a real failure.
-- **Run the full or integration suite when the change reaches it.** Include tests
-  that need services or extra setup: those often skip silently when unconfigured,
-  so a green run can be hollow. Make sure the relevant ones actually ran. A change
-  that does not reach that layer may not need it.
-- **Then exercise the change end to end.** Automated tests are not a substitute
-  for using the product. Drive the change the way a user would, and keep the
-  artifacts from that run. Do not commit them. Screenshots and recordings go
-  on the PR with `--attach`. Transcripts, logs, and other text are inlined into
-  Testing as a fenced code block with a language tag.
-
-  For a UI, click through the flow: the happy path, empty and error states, and
-  every page or route that shares the state, data, or components you touched.
-  Check desktop and mobile when layout or styling changed. Hunt for regressions
-  in surrounding flows; a change that works in isolation and breaks elsewhere is
-  the common miss. For a CLI or API, run the real command or request against
-  real inputs and keep the transcript to inline into Testing.
-
-  Skip capture only when the change has no runtime surface (a comment, a rename
-  with no behavior, prose with nothing to execute). Write that sentence in
-  Testing. If the change can be exercised, it must be.
-
-When a fix breaks a test, do not just patch the one failure: scan for other call
-sites or fixtures that relied on the old behavior, so the next CI run does not
-surface a sibling break.
-
-## 4. Mark ready and add testing proof
-
-After local checks succeed, edit the PR to add Testing and mark it ready.
-`--attach` is for images and videos. Inline text (a transcript, log, command
-output, JSON, a diff) in a fenced code block with a language tag.
-
-````sh
-gh pr edit <n> --body "$(cat <<'EOF'
-## Why this change
-
-Fixes #<issue>.
-
-<What is wrong today and why it matters.>
-
-## What changed
-
-<What the change does, as a short bulleted list.>
-
-## Testing
-
-<Exact commands run and their results. If a check was not run, say why.>
-
-<What was exercised end to end.>
-
-```console
-$ pnpm test
-PASS  src/foo.test.ts
-```
-
-![Happy path](/abs/path/happy.png)
-
-![](/abs/path/walkthrough.mp4)
-EOF
-)" \
-  --attach '/abs/path/happy.png' \
-  --attach '/abs/path/walkthrough.mp4'
-
-gh pr ready <n>
-````
-
-When rewriting the body, keep Why and What changed and add Testing.
-
-Set the fence language to match the content: `console` for a shell transcript,
-`json` for JSON, `diff` for a diff, `text` when nothing else fits. Do not pass
-text files to `--attach`.
-
-Attach screenshots and recordings with `--attach` on the same `gh pr edit` that
-writes the Testing section. Requires `gh` 2.99.0+. Check `gh --version`; if it
-is older, stop and tell the user to upgrade (`brew upgrade gh`, or the install
-they use). Do not upgrade `gh` yourself.
-
-`$ship-it` is confirmation to put proof in the PR: state image and video files,
-then `--attach`; paste text into Testing as a language-tagged fence.
-
-`--attach` accepts png, jpg, jpeg, gif, webp, svg, mp4, mov, and webm. Put a
-Markdown image in Testing whose destination is the same path you pass to
-`--attach`. Quote `--attach` values. `gh` rewrites that path to a
-`user-attachments` URL and keeps the alt text from the Markdown. A video
-renders as a player only when its image reference is the whole paragraph, with
-empty alt: `![](/abs/path/walkthrough.mp4)`. Omit the image refs and `--attach`
-flags when there is no media.
-
-Testing lives in the PR body, not a comment. If you are only adding an image or
-video and not rewriting the body,
-`gh pr edit <n> --attach '/abs/path/shot.png#After the fix'` appends it.
-
-If attach fails, stop and tell the user. Partial success still updates the PR
-and prints its URL, then exits non-zero: treat that as failure until every
-intended image or video is in Testing.
-
-Do not commit the proof files.
-
-Before watching CI, verify the final PR's base, head, readiness, title, body,
-and URL with `gh pr view`. Confirm Testing contains the proof: a
-`user-attachments` embed for each image or video, a language-tagged fence for
-text, or the no-runtime-surface sentence.
-
-## 5. Get CI green
-
-CI is not green until **every** check passes: the build (across whatever matrix it
-runs), the test job, and the formatter and linter checks.
-
-Wait with `gh pr checks <n> --watch --interval 20` (it blocks until the run
-resolves), in the foreground or as a background job. Watch the complete check set
-so a filtered view cannot hide a failure. When a check fails, start with the complete
-failed-job log, then search within it as needed:
-
-```sh
+gh pr checks <n> --watch --interval 20
 gh run view <run-id> --log-failed
 ```
 
-Then loop: **diagnose the failure, fix it, re-run the local gates from step 3,
-commit the fix, push, and re-poll.** If the fix changes behavior, capture new
-end-to-end proof and put it in Testing. A first red run is normal and useful (it)
-catches hidden dependencies like a fixture that relied on old behavior); keep
-going until it is all green. Do not declare done on a partial pass.
+For failures within the request, diagnose, fix, run affected checks, commit, push,
+and watch again. Refresh proof when the behavior it documents changes. Preserve
+required checks; do not bypass them or claim success when checks failed, were
+cancelled, or did not run as expected.
 
-## 6. Report
+Report unrelated failures rather than expanding the work without direction.
+If access or infrastructure blocks progress, identify the blocker and checks
+that remain unresolved.
 
-Close with the PR link and the concrete green state: which check groups passed,
-what shipped as a short list of commits, the end-to-end proof that landed in
-Testing, and any first-run failure fixed along the way. State plainly that CI
-is fully green.
+## Report
+
+Link the PR and state its actual readiness and CI results. Summarize meaningful
+changes and verification gaps. Say CI is green only when the complete applicable
+check set supports that claim.

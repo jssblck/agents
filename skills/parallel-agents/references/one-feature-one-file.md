@@ -1,56 +1,33 @@
-# One feature, one file
+# File boundaries for parallel work
 
-Merge conflicts among parallel agents are a structural property, not bad luck.
-They concentrate in hub files: the files every feature must touch regardless of
-what the feature is. Measured over real agent-managed repos, the top conflict
-files are always the same shapes: the file holding every subcommand handler,
-the single integration-test main, the HTTP router, the monolithic agent doc.
-Change the structure and the conflict rate follows.
+Separate independently owned behavior when concurrent edits or observed
+conflicts justify it. A file split should improve ownership or cohesion, not
+satisfy a fixed line count.
 
-## The rule
+## Recognize a shared-file hotspot
 
-New behavior gets its own file. The shared file it plugs into grows by exactly
-one line.
+Look for unrelated work repeatedly touching the same dispatcher, registry,
+router, stylesheet, test entry point, or root instruction file. File size alone
+does not establish a conflict problem.
 
-One line means a `mod` declaration, a route registration, a match arm that
-delegates, a re-export, a table entry. The body (the handler, the scenario,
-the page, the logic) lives in the new file. Two agents each adding a file plus
-one registration line auto-merge almost every time; two agents each adding a
-200-line function to the same file conflict almost every time.
+When a feature has a distinct owner, keep its body in a focused module and its
+registration in the shared file. A small registration often merges cleanly,
+but one line is a useful shape rather than a requirement.
 
-## Recognizing a hub
+## Choose a boundary
 
-A hub is any file where growth from unrelated features lands. Symptoms:
+- CLI: a command handler can live separately from command registration.
+- HTTP: group handlers by resource or behavior; keep routing concise.
+- UI: keep page-specific components and styles near their page.
+- Tests: follow the behavior's ownership. Add cases to an existing cohesive suite
+  when that is clearer than creating another file.
 
-- a match or switch over subcommands or routes with the bodies inline
-- a single test file holding every scenario
-- a mod/index/init file that contains logic instead of only declarations
-- a shared stylesheet or script that every page appends to
-- a "handlers" or "commands" or "utils" file that only ever grows
+Follow the project's layout. Do not split a small cohesive module or create
+one-function files merely because parallel agents are available.
 
-If the last ten commits touching a file have nothing in common except the
-file, it is a hub.
+## Shared plumbing
 
-## Patterns by shape
-
-- CLI (Rust and similar): `src/commands/<name>.rs` holding the handler, one
-  dispatch arm in the command tree. A new integration scenario gets its own
-  module under the test directory, never another function in a shared main.
-- HTTP services (Go and similar): one file per resource for handlers; the
-  router file holds registration lines only.
-- Web UI: one template or component file per page; page-scoped styles live
-  next to the page rather than appended to a global stylesheet.
-- Tests follow the code: a new module gets its own test file. Do not append
-  cases to a shared test file for convenience.
-
-## When the hub edit cannot be one line
-
-Some features genuinely change shared plumbing. Keep that edit minimal and
-mechanical, isolate it in its own commit, and follow `mergeable-edits.md`
-for how to shape it so concurrent branches still merge.
-
-## The counter-instinct
-
-"Just add a function here" feels cheaper in the moment, and for a solo author
-it is. With parallel agents the marginal function in a shared file is exactly
-where the conflicts come from. When in doubt, make the new file.
+Some changes need edits across a shared boundary. Keep them scoped and follow
+[mergeable-edits.md](mergeable-edits.md) for generated files and conflict handling.
+Propose an independent structural refactor rather than adding it to a bug fix
+solely to prevent hypothetical future conflicts.

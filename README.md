@@ -5,6 +5,10 @@ Jess's agent skills, one directory per skill, in the
 
 Project skills live under `skills/`. Machine skills live under `machine/`.
 
+Use [project-bootstrap](skills/project-bootstrap/SKILL.md) when requesting
+repository setup or the full project template. Ordinary coding uses the existing
+toolchain and does not add review gates or release infrastructure.
+
 ```sh
 ./install -g   # replace ~/.agents/skills and ~/.claude/skills with this repo
 ./install      # sync project skills into the current repo; keep the project's own

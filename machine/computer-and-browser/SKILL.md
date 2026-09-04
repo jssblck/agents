@@ -1,60 +1,92 @@
 ---
 name: computer-and-browser
-description: >
-  Route desktop and browser work across an isolated browser, the harness's own
-  Chrome extension (Claude in Chrome, the Codex Chrome plugin, or the bundled
-  Agent Browser MCP) on the signed-in Chrome profile, and Peekaboo computer
-  use. Use when the user asks for computer use, desktop control, existing
-  Chrome, signed-in browser, SSO, live tab takeover, screenshot-and-click, or
-  /computer-and-browser.
+description: Choose supported tools for browser or desktop work, including signed-in sites, existing tabs, SSO, native apps, and visual interaction. Preserve the user's chosen browser, profile, and target.
 ---
 
 # Computer and browser
 
-Three surfaces. Pick one. Do not stack them on the same target.
+Choose the surface the task needs, then use the supported interface available
+in this session. Follow current tool documentation rather than assuming an API
+from the harness name. Do not run competing controllers on the same target.
 
-## Choose
+## Choose the surface
 
-| Task | Surface |
-| --- | --- |
-| Isolated or sandboxed browser, localhost, device width, recording | That harness's built-in browser tools, if present |
-| Signed-in site, existing tab, SSO, 2FA, live Chrome bug | That harness's own Chrome extension; `agent-browser` from a harness without one |
-| Native app, OS dialog, menu bar, canvas, or no DOM | `peekaboo` |
+- Use an isolated browser for localhost, disposable testing, or a fresh session
+  when the task does not need the user's existing login.
+- Use the user's signed-in browser for existing tabs, SSO, or state that must be
+  reproduced in that profile. Honor browser and tab mentions.
+- Use native-app control for OS dialogs, menu bars, or desktop applications.
+- Prefer supported DOM or accessibility controls when useful. Use visual
+  interaction for canvas content or interfaces those controls cannot expose.
 
-When the work needs the user's real Chrome, use the extension that belongs to the harness you are running in:
+Prefer a purpose-built connector or API when it fulfills the request without
+losing the state or UI behavior the user wants to inspect.
 
-- Claude Code: `claude-in-chrome` (`mcp__claude-in-chrome__*`). Load the tools with one `ToolSearch` select call, then `tabs_context_mcp` before anything else.
-- Codex: the Codex Chrome plugin, driven through `mcp__node_repl__js` (no `browser_*` tools). Import `setupBrowserRuntime` from the plugin's `scripts/browser-client.mjs`, `agent.browsers.get("chrome")`, read `chrome.documentation()`, then `chrome.user.openTabs()` before touching tabs.
-- Any harness without its own extension: `agent-browser`, the MCP server that ships in this skill.
+## Choose the available interface
 
-Do not reach for `agent-browser` from Claude Code or Codex when their own extension is available. Only one extension should drive a tab at a time.
+Discover available tools before selecting a runtime. Read that interface's
+documentation and initial state before acting.
 
-For `agent-browser`, discover tools with `search_tool` (`agent-browser`, `status`, `tabs`, `open`). This is the Agent Browser extension in Chrome: same profile, cookies, and logins, no Chrome Allow dialog. Call `status` first. If nothing is connected, or `status` says the extension is stale, tell the user to reload the unpacked Agent Browser extension (`chrome://extensions`). Then `open` a URL (pass a short `label` naming the task) or `attach` a tab nobody holds. Later commands act on that session's tab.
+- When unified computer-use tools such as `mcp__cua_repl__js` are available,
+  use their documented browser or app entry point. Follow their first-call
+  instructions exactly.
+- When the session instead exposes a browser plugin through a JavaScript REPL,
+  follow that plugin's current setup instructions. Do not guess an import path,
+  runtime object, or method from an older plugin version.
+- A harness-provided Chrome extension can control the signed-in profile. Read
+  its tab inventory and ownership rules before attaching.
+- Use the bundled Agent Browser MCP when no suitable host interface is available
+  and that MCP is connected.
+- Use Peekaboo for native UI when it is the available supported interface. Start
+  with `see` and act on the resulting element IDs.
 
-Many agents share one Chrome. Each agent is its own session with its own tab, shown in a colored tab group titled `Agent: <label>`. `tabs` marks tabs as `[yours]` or `[agent: ...]`; `attach` refuses a tab another agent holds. When an agent's session ends, its tab is released and left open for the user. The debugger banner clears on its own after 30 seconds without commands.
+Missing tools do not establish that a restart is needed. Check discovery and the
+documented connection or setup state. Report the missing capability; recommend
+a restart only when the host documentation or diagnostics supports it.
 
-Use `peekaboo` for desktop UI. Call `see` first. Act on element IDs from that snapshot. Do not screenshot-click a webpage that still has a DOM snapshot.
+## Bundled Agent Browser
 
-Do not use `chrome-devtools` `--autoConnect`. Do not use hangwin `chrome-mcp-server`. Both are the wrong stack on this machine.
+This skill ships `extension/`, `native-host/bridge.mjs`, and
+`mcp/agent-browser.mjs`. Chrome starts the native host, which connects agent
+sessions. Runtime state is under `~/.agents/browser/`.
 
-## Setup that blocks the tools
+Discover the MCP tools and call `status` first. If disconnected or stale, check
+whether Chrome has loaded the unpacked extension and ask the user to reload it
+when needed. Use `open` with a short task label or `attach` to an unowned tab.
 
-`agent-browser` lives in this skill directory: `extension/` (unpacked MV3 extension), `native-host/bridge.mjs` (Chrome starts it; it is the hub every agent connects to), and `mcp/agent-browser.mjs` (a single-file MCP server, one per agent, no install step). Runtime state is under `~/.agents/browser/`.
+Each session owns one tab in an `Agent: <label>` tab group. The tab inventory
+marks ownership; do not attach to another agent's tab. When a session ends, its
+tab is released and left open. The debugger banner clears after inactivity.
 
-Register the MCP server once per harness. From a global install the path is `~/.agents/skills/computer-and-browser/mcp/agent-browser.mjs`:
+For requested setup, register the MCP server at the installed path:
 
 ```json
 { "mcpServers": { "agent-browser": { "command": "node", "args": ["/Users/<you>/.agents/skills/computer-and-browser/mcp/agent-browser.mjs"] } } }
 ```
 
-The server refreshes the native messaging manifests on every start. To do only that, run `node .../mcp/agent-browser.mjs install`. Load the extension once by hand: open `chrome://extensions`, turn on Developer mode, choose Load unpacked, and pick this skill's `extension/`. The key in the manifest pins its id, so the folder can move. If `status` stays disconnected, reload the extension. After updating the extension or native host, reload the extension so Chrome restarts the host.
+The server refreshes native messaging manifests on startup. For manifest-only
+setup, run `node <skill>/mcp/agent-browser.mjs install`. Load `extension/` as an
+unpacked extension in Chrome. Reload it after extension or native-host updates.
 
-Peekaboo needs Screen Recording, Accessibility, and (for some clicks) Event Synthesizing granted to Peekaboo (`boo.peekaboo.peekaboo`), not Terminal. Check with `peekaboo permissions status --no-remote`.
+Do not use `chrome-devtools --autoConnect` or hangwin `chrome-mcp-server` on this
+machine; they are not the configured browser stack.
 
-If `agent-browser` or `peekaboo` tools are missing, this session started before the user MCP config loaded. Start a new session in the same harness.
+## Peekaboo setup
 
-## Safety
+When Peekaboo is the chosen interface, use
+`peekaboo permissions status --no-remote` to diagnose missing permissions.
+Screen Recording, Accessibility, and Event Synthesizing belong to Peekaboo
+(`boo.peekaboo.peekaboo`), not Terminal.
 
-Every Chrome extension here acts in the user's signed-in Chrome. A wrong click is a real action. Ask before sending mail, submitting a form, buying something, or entering credentials. Leave the user's own tabs alone unless you attach to one on purpose.
+## Action boundaries
 
-Do not grant Peekaboo foreground cursor control (`move`, `drag`, or untargeted `scroll`) unless the user asked for it.
+Actions in a signed-in browser affect the real account. Perform writes only
+within the user's authorization. Ask when an action, destination, or commitment
+is unclear; do not ask again merely because an already-requested action uses UI.
+
+Leave the user's other tabs alone. Do not copy cookies, credentials, or profile
+files into another client. Use the supported login flow when authentication is
+needed.
+
+Do not grant Peekaboo foreground cursor control (`move`, `drag`, or untargeted
+`scroll`) unless the user requested it.
