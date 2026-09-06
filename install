@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Sync this repo's skills. -g replaces user-level skills; without -g, syncs
-# the project pack into the current directory and drops leftovers this repo
+# Sync this repo's skills. -g replaces user-level skills with the machine pack;
+# without -g, syncs the project pack into the current directory and drops leftovers this repo
 # no longer ships (git-tracked project skills and other sources stay).
 set -euo pipefail
 
@@ -15,11 +15,9 @@ Usage: install [-g]
 Sync skills from jssblck/agents (Claude Code and Codex).
 
   -g            User-level: delete ~/.agents/skills and ~/.claude/skills,
-                then install the machine pack and the project pack globally.
-                Use this to match your machine to this repo.
+                then install only the machine pack globally.
 
                 npx skills add jssblck/agents/machine -a claude-code -a codex -g -y
-                npx skills add jssblck/agents -a claude-code -a codex -g -y
 
   (no flag)     Project-level: from the current directory, install only the
                 project pack. Leftover copies of skills this repo has deleted
@@ -207,7 +205,6 @@ PY
 if ((GLOBAL)); then
   rm -rf "${HOME:?}/.agents/skills" "${HOME:?}/.claude/skills"
   add "$SOURCE/machine" -g
-  add "$SOURCE" -g
 else
   add "$SOURCE"
   prune_stale_project_skills

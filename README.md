@@ -10,11 +10,12 @@ repository setup or the full project template. Ordinary coding uses the existing
 toolchain and does not add review gates or release infrastructure.
 
 ```sh
-./install -g   # replace ~/.agents/skills and ~/.claude/skills with this repo
+./install -g   # replace user-level skills with the machine pack
 ./install      # sync project skills into the current repo; keep the project's own
 ```
 
-`-g` deletes the user-level skill directories, then installs both packs globally.
+`-g` deletes the user-level skill directories, then installs only `machine/` globally.
+Install `skills/` per project with `./install`.
 
 Without `-g`, installs the project pack into the current directory (`.agents/skills/`, linked from `.claude/skills/`, recorded in `skills-lock.json`). Copies of skills this repo has deleted are removed when git does not track them. Project-owned skills and installs from other sources stay.
 
