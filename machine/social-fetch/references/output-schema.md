@@ -12,7 +12,7 @@ not `0` or `""`. Missing is not zero.
   "url": string,
   "fetched_at": ISO8601,
   "raw_source":
-    "direct-api" | "fxtwitter" | "agent-browser" | "open-graph" | "nitter"
+    "direct-api" | "fxtwitter" | "browser" | "open-graph" | "nitter"
     | "wayback" | "scrapecreators" | "apify" | "webfetch",
 
   "author": {

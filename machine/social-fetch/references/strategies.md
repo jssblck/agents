@@ -95,9 +95,7 @@ If it 403s or times out, continue.
 
 ### 2. Rendered preview (limited)
 
-Open the permalink. In Cursor, `WebFetch` first; if that is a login
-wall, a computer-use / browser subagent. On Claude Code,
-`agent-browser open` plus a snapshot.
+Open the permalink with Codex's built-in browser tools and inspect the page.
 
 Expect body text and a handle. Engagement, replies, and the rest of a
 thread are often missing. Dismiss a "Sign up to see" modal if one is

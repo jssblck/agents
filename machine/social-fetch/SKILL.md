@@ -57,10 +57,8 @@ Read `references/strategies.md`. Each platform has a free-first chain.
 - Paid strategies (ScrapeCreators, Apify) run only when the env key is
   set. Prompt before spending quota. See `references/auth-keys.md`.
 
-In Cursor, prefer `WebFetch` or `curl` over a headed browser. Use a
-computer-use / browser subagent only when the page is a login wall and
-the next free strategy needs a rendered preview. `agent-browser` is
-fine on hosts that have that CLI.
+Prefer a direct fetch over a headed browser. When a login wall requires
+a rendered preview, use Codex's built-in computer use and browser tools.
 
 ## 3. Execute
 

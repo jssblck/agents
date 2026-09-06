@@ -1,4 +1,0 @@
-interface:
-  display_name: "Computer and Browser"
-  short_description: "Choose supported browser and desktop controls"
-  default_prompt: "Use $computer-and-browser to pick the right surface for this browser or desktop task."
