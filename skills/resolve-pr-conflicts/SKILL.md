@@ -1,6 +1,6 @@
 ---
 name: resolve-pr-conflicts
-description: Resolve a PR's merge conflicts against its current base branch and verify the combined changes. Use independently or during PR babysitting and merging.
+description: "Use when a PR has merge conflicts with its base branch, including conflicts found during babysitting or merging."
 ---
 
 # Resolve PR conflicts

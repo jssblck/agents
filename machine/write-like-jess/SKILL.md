@@ -1,6 +1,6 @@
 ---
 name: write-like-jess
-description: Draft or revise emails, messages, posts, documentation, commentary, and other prose in Jess's natural voice. Use when the user asks to write like Jess, match her voice, make text sound more like her, or remove generic AI polish while preserving the intended audience and format.
+description: "Use when the user asks for prose in Jess's voice or asks to remove generic AI polish from her writing."
 ---
 
 # Write Like Jess

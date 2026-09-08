@@ -1,4 +1,4 @@
 interface:
   display_name: "social-fetch"
-  short_description: "Fetch a social post by URL as structured data"
+  short_description: "When a task needs the content of a social post URL"
   default_prompt: "Use $social-fetch to pull this social post by URL."

@@ -1,6 +1,6 @@
 ---
 name: ship-it
-description: Commit and publish a completed change as a pull request, add verification evidence with gh --attach, and drive CI green. Use for "ship it", "commit and open a PR", or "push this and watch CI". CI-only requests must not expand into PR creation or readiness changes.
+description: "Use when asked to ship a completed change, commit and open a PR, or push changes and watch CI. Use babysit for monitoring an existing PR."
 user-invocable: true
 ---
 

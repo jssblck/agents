@@ -1,4 +1,4 @@
 interface:
   display_name: "Ship It"
-  short_description: "Publish a PR with scoped proof and green CI"
+  short_description: "When asked to ship a change or open a PR"
   default_prompt: "Use $ship-it to publish this change as a non-draft PR, then run signoff, add verification evidence, and drive CI green."

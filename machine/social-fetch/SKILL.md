@@ -1,13 +1,6 @@
 ---
 name: social-fetch
-description: >
-  Fetch the content of a social media post by URL as structured data.
-  Use for tweets, X threads, LinkedIn posts, Instagram posts, TikTok
-  videos, Bluesky posts, Reddit threads, Mastodon statuses, Threads
-  posts, and Hacker News items. Triggers on "/social-fetch", "fetch
-  this tweet", "fetch this post", "what does this LinkedIn say",
-  "read this thread", "pull this post", or when another skill needs
-  the text of a social URL.
+description: "Use when the user supplies a social post URL to read or another task needs its content. Applies to X, LinkedIn, Instagram, TikTok, Bluesky, Reddit, Mastodon, Threads, and Hacker News. Skip video hosts such as YouTube, Loom, and Vimeo; use reddit for signed-in Reddit tasks."
 metadata:
   version: 0.1.1
   source: coreyhaines31/makerskills

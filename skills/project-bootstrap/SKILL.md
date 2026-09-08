@@ -1,6 +1,6 @@
 ---
 name: project-bootstrap
-description: Set up a new repository or apply Jess's repository tooling defaults when the user requests bootstrap, project infrastructure, or a full repository template. Do not use for ordinary coding, prototypes, or hardening that does not request repository setup.
+description: "Use when the user requests repository setup, tooling infrastructure, or Jess's full project template. Skip coding, prototypes, and hardening requests that do not include repository setup."
 ---
 
 # Project Bootstrap

@@ -1,6 +1,6 @@
 ---
 name: merge-open-prs
-description: Use when asked to "merge all open PRs" or land the open PRs together. Snapshots the open set, resolves each PR onto the default branch, and merges them one at a time.
+description: "Use when asked to merge all open PRs or land a specified set of PRs together."
 user-invocable: true
 ---
 

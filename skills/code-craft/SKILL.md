@@ -1,6 +1,6 @@
 ---
 name: code-craft
-description: Write, review, or refactor code with clear boundaries, useful types, and minimal abstractions. Follow existing project conventions. Use project-bootstrap only when repository setup is requested.
+description: "Use when writing, reviewing, or refactoring code."
 user-invocable: true
 argument-hint: "[rust|typescript|go|python] [target]"
 ---

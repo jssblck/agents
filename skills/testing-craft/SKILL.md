@@ -1,6 +1,6 @@
 ---
 name: testing-craft
-description: Write, review, or refactor tests using behavior-focused assertions, deterministic fixtures, and verification proportional to the change. Follow the project's test conventions.
+description: "Use when writing, reviewing, or refactoring tests, or choosing verification for a code change."
 user-invocable: true
 argument-hint: "[rust|typescript|go|python] [target]"
 ---

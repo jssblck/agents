@@ -1,4 +1,4 @@
 interface:
   display_name: "Using sops"
-  short_description: "Read, write, and run with sops-encrypted secrets"
+  short_description: "For secrets or key setup in repos using sops"
   default_prompt: "Use $using-sops to work with this repository's secrets."

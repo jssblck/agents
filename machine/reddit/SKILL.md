@@ -1,10 +1,6 @@
 ---
 name: reddit
-description: >
-  Read and act on Reddit through the signed-in Chrome session on the
-  shared computer. Use page-level browser tools only. Open old.reddit.com
-  URLs for inbox, user, listings, search, and threads. Write (comment,
-  post, vote, message) only when the user explicitly asks.
+description: "Use for Reddit browsing, search, inbox checks, or explicitly requested account actions in the shared computer's signed-in Chrome session."
 ---
 
 # Reddit (signed-in Chrome)

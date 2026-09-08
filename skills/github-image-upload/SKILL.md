@@ -1,12 +1,6 @@
 ---
 name: github-image-upload
-description: >-
-  Attach local images and videos to a pull request, issue, or comment with
-  gh --attach. Inline text (a transcript, log, or command output) in a fenced
-  code block with a language tag. Use when asked to "attach a screenshot to
-  the PR", "add an image to the PR description", "put this image in the
-  issue", "show test results in the PR", "embed before/after screenshots",
-  or otherwise put visual or text proof on GitHub.
+description: "Use when a GitHub PR, issue, or comment needs screenshots, recordings, test results, or other visual or text evidence."
 license: MIT
 compatibility: Requires GitHub CLI (`gh`) 2.99.0 or newer, and network access to GitHub.
 allowed-tools: >-
