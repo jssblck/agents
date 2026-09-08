@@ -1,4 +1,4 @@
 interface:
   display_name: "Stop Slop"
-  short_description: "Remove machine-written tells from durable prose"
+  short_description: "For drafting or editing durable prose"
   default_prompt: "Use $stop-slop to clean up this text."

@@ -1,6 +1,6 @@
 ---
 name: gh-stack
-description: "Use for stacked PRs with the gh-stack extension: creating, viewing, editing, pushing, submitting, syncing, rebasing, merging, or checking out a stack, or splitting multi-part work into reviewable layers. Also use whenever a stack is checked out or the user mentions stacks, branch layers, or dependent PRs."
+description: "Use when working in a checked-out PR stack, handling dependent PRs or branch layers, or planning to split work into stacked PRs."
 ---
 
 # gh-stack

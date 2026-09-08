@@ -1,6 +1,6 @@
 ---
 name: stop-slop
-description: "Use for durable prose artifacts: docs, README, release notes, UI copy, comments, commit messages, PR/issue text. Skip ordinary chat replies."
+description: "Use when drafting or editing durable prose, including docs, UI copy, comments, commit messages, and PR or issue text. Skip ordinary chat replies."
 ---
 
 # Stop slop

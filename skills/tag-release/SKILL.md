@@ -1,6 +1,6 @@
 ---
 name: tag-release
-description: Use when asked to tag or cut a patch, minor, or major release. Tags the remote default branch in the repo's convention, pushes, and watches the release to green.
+description: "Use when asked to tag or cut a patch, minor, or major release."
 user-invocable: true
 ---
 

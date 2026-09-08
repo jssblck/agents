@@ -1,6 +1,6 @@
 ---
 name: parallel-agents
-description: Coordinate edits when agents share a codebase, resolve shared-file conflicts, or address measured merge hotspots. Also use for maintaining AGENTS.md or CLAUDE.md. Do not impose file splits on ordinary solo changes.
+description: "Use when agents work concurrently in a codebase, shared files have recurring merge conflicts, or AGENTS.md or CLAUDE.md needs maintenance."
 ---
 
 # Parallel agents

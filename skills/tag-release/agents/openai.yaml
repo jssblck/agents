@@ -1,4 +1,4 @@
 interface:
   display_name: "Tag Release"
-  short_description: "Tag the default branch and verify the release"
+  short_description: "When asked to tag or cut a release"
   default_prompt: "Use $tag-release to cut the requested release from the current remote default branch and verify it succeeds."

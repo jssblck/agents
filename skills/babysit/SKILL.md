@@ -1,6 +1,6 @@
 ---
 name: babysit
-description: Watch a GitHub PR's checks with gh, resolving merge conflicts before waiting and diagnosing failed or missing checks. Use when asked to babysit a PR or wait for CI or a review check.
+description: "Use when asked to babysit a GitHub PR or wait for its CI or review checks."
 ---
 
 # Babysit a PR

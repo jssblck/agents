@@ -1,14 +1,14 @@
 ---
 name: ship-it
-description: Commit and publish a completed change as a pull request, add verification evidence with gh --attach, and drive CI green. Use for "ship it", "commit and open a PR", or "push this and watch CI". CI-only requests must not expand into PR creation or readiness changes.
+description: "Use when asked to ship a completed change, commit and open a PR, or push changes and watch CI. Use babysit for monitoring an existing PR."
 user-invocable: true
 ---
 
 # Ship it
 
 For a full shipping request, finish with the change committed, pushed, open as a
-ready pull request, and green in CI. Open a new PR as a draft so CI can run while
-you verify locally. Mark it ready only after verification succeeds.
+ready pull request, and green in CI. Open a new PR as non-draft, then run signoff
+and local verification while CI runs.
 
 A narrower request keeps its scope. For CI-only repair, fix the affected branch
 and checks without creating a PR or changing its draft/ready state, base, title,
@@ -40,15 +40,20 @@ For a full shipping request, push and check for an existing PR:
 gh pr list --state open --head <branch> --json number,title,url,isDraft,baseRefName,headRefName
 ```
 
-Reuse the existing PR. Do not convert a ready PR back to draft. Otherwise, create
-a draft with `gh pr create --draft`. Use the default branch as the base unless
-this is a dependent layer in an existing stack or the user specified another base.
+Reuse the existing PR. If it is a draft, mark it ready with `gh pr ready` unless
+the user asked to keep it a draft. If no PR exists, create a non-draft PR with
+`gh pr create`. Use `--draft` only when the user explicitly requests a draft.
+Use the default branch as the base unless this is a dependent layer in an
+existing stack or the user specified another base.
 
 Explain why the change is needed and what changed. Reference the originating
 issue with `Fixes #<n>` when applicable. Preserve existing context when editing
 the body. Do not add labels or reviewers unless requested.
 
-## Verify proportionally
+## Run signoff and verify proportionally
+
+For a full shipping request, run the project's signoff workflow after opening
+or reusing the PR and setting its intended readiness.
 
 Read the repo's check commands. Run required local checks and the tests that
 cover the changed behavior. Generate required code before building.
@@ -69,7 +74,7 @@ After passing checks, repeat or broaden verification only for new edits, failure
 or unresolved risks. Do not refactor unrelated code to improve the verification
 process. Commit and push any necessary fixes.
 
-## Add evidence and mark ready
+## Add evidence
 
 For a full shipping request, add a Testing section with exact commands, results,
 and relevant gaps. Use existing automation output when sufficient.
@@ -87,9 +92,7 @@ Invoking this full workflow authorizes adding its proof to the PR. Keep evidence
 in the PR body, preserve its existing explanation, and keep any required
 attribution footer last.
 
-After local verification, mark the PR ready unless the user asked to keep it a
-draft. Skip readiness changes for CI-only requests. Verify the intended PR base,
-head, state, and evidence with `gh pr view`.
+Verify the intended PR base, head, state, and evidence with `gh pr view`.
 
 ## Babysit the published PR
 

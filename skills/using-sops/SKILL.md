@@ -1,6 +1,6 @@
 ---
 name: using-sops
-description: Use when a repo has .sops.yaml and secrets/<env>.env, or a pnpm secrets script. Covers reading and writing dev secrets, prod elevation, running with secrets, and the human key setup.
+description: "Use when a task needs secrets or key setup in a repo with .sops.yaml and secrets/<env>.env, or a pnpm secrets script."
 ---
 
 # Using sops
