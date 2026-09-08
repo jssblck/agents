@@ -91,14 +91,12 @@ After local verification, mark the PR ready unless the user asked to keep it a
 draft. Skip readiness changes for CI-only requests. Verify the intended PR base,
 head, state, and evidence with `gh pr view`.
 
-## Drive CI green
+## Babysit the published PR
 
-Watch the complete check set so a filtered view cannot hide a failure:
-
-```sh
-gh pr checks <n> --watch --interval 20
-gh run view <run-id> --log-failed
-```
+After publishing and verifying the PR, use [babysit](../babysit/SKILL.md) to
+check for merge conflicts before waiting and watch CI through completion.
+Watch the complete check set so a filtered view cannot hide a failure. For
+monitoring-only requests, report conflicts without resolving them.
 
 For failures within the request, diagnose, fix, run affected checks, commit, push,
 and watch again. Refresh proof when the behavior it documents changes. Preserve

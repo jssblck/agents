@@ -83,7 +83,8 @@ Work in a temporary worktree. For each PR in order:
    merged. Retarget with `gh pr edit <n> --base <default-branch>` when GitHub
    has not already.
 3. Update the PR branch onto the current default. Resolve conflicts on that
-   branch (`references/conflicts.md`). Confirm `isCrossRepository` and
+   branch with [resolve-pr-conflicts](../resolve-pr-conflicts/SKILL.md).
+   Confirm `isCrossRepository` and
    `maintainerCanModify` match the remote you will update. Get explicit
    approval before rewriting a branch you do not own, and disclose every
    rewrite.
@@ -91,8 +92,8 @@ Work in a temporary worktree. For each PR in order:
    where the draft was deliberate.
 5. Verify with the repo's own checks on this PR: build, format, lint, and the
    tests for its blast radius. Wait until every required check on this PR is
-   green. If the PR cannot be made mergeable on the current default, stop and
-   ask.
+   green using [babysit](../babysit/SKILL.md). If the PR cannot be made
+   mergeable on the current default, stop and ask.
 6. Re-read the head SHA and the default-branch tip. If either moved since
    verification, update and re-verify. Then:
 

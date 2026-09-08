@@ -8,7 +8,7 @@ regenerate from the resolved manifest, then confirm consistency (`npm ci` fails
 if a lockfile and manifest disagree).
 
 **Semantic conflicts** (invisible to Git), caught when updating this PR onto a
-default branch that already contains an earlier work-set PR:
+base branch that already contains other changes:
 
 - **Shared version or sequence constants.** Two PRs must not both claim the
   same bump. If a landed PR took `3 -> 4`, this PR's bump becomes `4 -> 5`.
