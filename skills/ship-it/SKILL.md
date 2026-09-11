@@ -30,7 +30,6 @@ explicit paths. Group related files into logical commits.
 Use an imperative subject. Explain the reason for the change where it is not
 obvious from the subject. Follow active attribution and punctuation instructions.
 Wrap commit bodies around 80 columns, but do not hard-wrap PR paragraphs.
-Apply `stop-slop` to Git text.
 
 ## Open or reuse the PR
 
