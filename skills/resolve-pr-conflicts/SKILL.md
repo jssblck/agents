@@ -35,7 +35,8 @@ merges cleanly. Ask when the resolution requires a product decision.
 1. Resolve the conflicts and complete the merge or rebase.
 2. Run the repository's relevant build, format, lint, and tests on the combined tree.
 3. Recheck the remote head and base before pushing.
-4. Update and re-verify if the base moved; preserve concurrent head changes.
+4. If the base moved, recheck for conflicts and apply the repository's freshness
+   requirements. Preserve concurrent head changes and verify any changed result.
 5. Push the verified update to the PR branch within the user's authorized scope.
 6. Re-read the PR head and mergeability after the push.
 7. Remove the temporary worktree after preserving the completed work.

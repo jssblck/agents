@@ -1,6 +1,6 @@
 ---
 name: github-image-upload
-description: "Use when a GitHub PR, issue, or comment needs screenshots, recordings, test results, or other visual or text evidence."
+description: Attach requested screenshots or recordings to a GitHub PR, issue, or comment and verify their destination.
 license: MIT
 compatibility: Requires GitHub CLI (`gh`) 2.99.0 or newer, and network access to GitHub.
 allowed-tools: >-
@@ -10,86 +10,49 @@ allowed-tools: >-
   Bash(gh issue view:*)
 ---
 
-# Attach images and videos on GitHub
+# Attach proof on GitHub
 
-`--attach` uploads a local image or video on the same command that writes an
-issue, pull request, or comment: `gh issue create`, `gh issue edit`,
-`gh issue comment`, `gh pr create`, `gh pr edit`, and `gh pr comment`.
+Use `--attach` on `gh pr create`, `edit`, or `comment`, or the corresponding
+`gh issue` command. Publication must be authorized by the task. Inline text
+evidence in a language-tagged fence; `--attach` accepts images and videos.
 
-`--attach` is for images and videos. Inline text in the body as a fenced code
-block with a language tag.
+Check `gh --version` and authentication if they are not already established.
+If the installed CLI lacks `--attach`, continue preparing the proof and report
+the version needed. A request to upload proof does not authorize upgrading the CLI.
 
-## Prerequisites
+## Attach to the intended destination
 
-1. `gh auth status`: if it fails, tell the user to run `gh auth login`.
-2. `gh --version`: needs 2.99.0+. If older, stop and tell the user to upgrade
-   (`brew upgrade gh`, or the install they use). Do not upgrade `gh` yourself.
+Identify the repository, PR or issue, and whether the destination is its body
+or a particular comment. Preserve existing content. Do not commit proof files.
 
-## Attach
+Write a multiline body to a file and pass `--body-file`. An image reference
+whose destination matches the attachment path is replaced with the uploaded URL:
 
-State the image and video files and the destination, then attach. Quote
-`--attach` values. `--attach` accepts png, jpg, jpeg, gif, webp, svg, mp4, mov,
-and webm.
-
-If you are writing the body, put a Markdown image whose destination is the
-same path you pass to `--attach`. `gh` rewrites that path to a
-`user-attachments` URL and keeps the alt text from the Markdown:
-
-```sh
-gh pr comment 13 --body "$(cat <<'EOF'
-The error state:
-
+```markdown
 ![Error state](/abs/path/error.png)
-EOF
-)" --attach '/abs/path/error.png'
 ```
-
-A video renders as a player only when its image reference is the whole
-paragraph, with empty alt: `![](/abs/path/walkthrough.mp4)`.
-
-If you are not rewriting the body, `--attach` alone appends:
 
 ```sh
-gh pr comment 13 --attach '/abs/path/shot.png#The login error state'
-gh pr edit 13 --attach '/abs/path/shot.png#The login error state'
+gh pr edit <number> -R <owner/repo> --body-file <body-file> --attach '/abs/path/error.png'
 ```
 
-`#` alt on the flag applies only when the body does not already reference the
-file. Repeat `--attach` for each file.
+For an appended attachment, `--attach '/abs/path/error.png#Error state'` supplies
+alt text. Repeat the flag for multiple files. Videos render as players when
+their image reference has empty alt text and occupies its own paragraph.
 
-If attach fails, stop and tell the user. Partial success still creates or
-updates the item and prints its URL, then exits non-zero: treat that as
-failure until every intended file is present.
+## Verify and recover
 
-Do not commit the attached files.
+Read the specific body or comment that the command created or changed. Verify
+each requested file has its corresponding uploaded URL in that destination,
+using the command result and the attachment's surrounding text. An attachment
+elsewhere in the thread does not prove this upload succeeded.
 
-## Text
+A nonzero exit can still leave a created PR or comment and some uploaded files.
+Inspect that result before retrying. Preserve successful uploads, correct a
+recoverable error, and edit the existing destination with only the missing
+files. Never replay a create or comment command blindly. If the result is
+uncertain or access prevents repair, report what succeeded and what remains.
 
-Inline a transcript, log, or other text in the body as a fenced code block.
-Set the language to match the content: `console` for a shell transcript,
-`json` for JSON, `diff` for a diff, `text` when nothing else fits. Do not pass
-text files to `--attach`.
-
-````markdown
-```console
-$ pnpm test
-PASS  src/foo.test.ts
-```
-````
-
-## Verify
-
-After `--attach`, count matches instead of printing the body. Expect at least 1
-(use `gh issue view <n>` for issues):
-
-```sh
-gh pr view <pr> --repo owner/repo --json body,comments \
-  -q '[.body] + [.comments[].body] | join("\n")' | grep -c 'user-attachments'
-```
-
-0 means the attach failed. Re-run the attach command. On a private repo the
-URL renders only for authorized viewers; an anonymous 404/403 is expected.
-
-When the proof is only inlined text, confirm the language-tagged fence is in
-the body. A missing `user-attachments` URL is not a failure if you did not
-attach media.
+For a private repository, verify with the signed-in account; an anonymous
+403 or 404 does not establish failure. Text-only proof needs its intended
+fenced content, not an attachment URL.

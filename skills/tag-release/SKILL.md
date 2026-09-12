@@ -96,8 +96,11 @@ gh api 'repos/<owner>/<repository>/commits/<release-sha>/status'
 
 The default branch, its SHA, and the latest relevant tag must be unchanged, the
 proposed tag must not exist, and required checks on the release SHA must be
-green. If anything moved, recompute the release and repeat this check. If a
-required check is pending or failing, stop.
+green. If anything moved, recompute the release and repeat this check. Wait for
+pending checks with the existing CI watcher, then recheck the target. For a
+failed check, diagnose it and repair only within the authorized scope. Do not
+tag while a required check is unresolved; continue independent preparation and
+report a blocker if repair needs new authorization or unavailable access.
 
 Then tag the fetched remote HEAD explicitly, matching the kind of the prior tags:
 

@@ -98,8 +98,8 @@ diverged, `sync` prints both chains, makes no changes, and exits 0 with `Sync ab
 ## Merging
 
 Jess's default for landing multiple PRs is sequential merging through the forge.
-Use [merge-open-prs](../merge-open-prs/SKILL.md): merge the parent first, update
-and verify the next PR against the current default branch, then merge it.
+Use [merge-open-prs](../merge-open-prs/SKILL.md): merge the parent first, then
+apply the repository's base-update and verification requirements to the next PR.
 Do not turn a request to merge open PRs into one combined stack operation.
 
 Use the commands below only when the user requests a whole-stack merge.
