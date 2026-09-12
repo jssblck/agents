@@ -1,4 +1,4 @@
 interface:
   display_name: "Merge Open PRs"
   short_description: "When asked to merge a set of open PRs"
-  default_prompt: "Use $merge-open-prs to snapshot the open PRs, resolve each onto the default branch, and merge them one at a time."
+  default_prompt: "Use $merge-open-prs to snapshot the open PRs and merge them one at a time through this repository's required gates."

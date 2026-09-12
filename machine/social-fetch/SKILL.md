@@ -38,7 +38,8 @@ structured data from a URL.
 | `threads.net/@*/post/*` | threads |
 | `news.ycombinator.com/item?id=` | hn |
 
-If the URL matches none of these, ask which platform it is. Do not guess.
+If the URL matches none of these, inspect its public destination to identify
+the platform. Ask only if the destination remains ambiguous or inaccessible.
 
 ## 2. Pick the strategy chain
 
@@ -48,7 +49,9 @@ Read `references/strategies.md`. Each platform has a free-first chain.
 - X, LinkedIn, Instagram, TikTok, and Threads need a preview, archive,
   or paid fallback for full data.
 - Paid strategies (ScrapeCreators, Apify) run only when the env key is
-  set. Prompt before spending quota. See `references/auth-keys.md`.
+  set and the user has authorized that paid service for this task. Ask before
+  an unapproved paid fallback; do not repeat an approval already given.
+  See `references/auth-keys.md`.
 
 Prefer a direct fetch over a headed browser. When a login wall requires
 a rendered preview, use Codex's built-in computer use and browser tools.

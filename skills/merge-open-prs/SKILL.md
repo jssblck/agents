@@ -16,8 +16,10 @@ Standing rules:
 - **The work set does not grow.** A PR opened after the snapshot is ignored.
   After every merge, compare remaining open PRs to the work set; never merge
   extras.
-- **A default-branch move is in scope.** After each merge the default branch
-  has moved. Update the next PR onto it, resolve, and re-verify before merging.
+- **Repository merge policy controls freshness.** After each merge, recheck the
+  remaining PRs. Update a branch only for a conflict, a changed dependency, or
+  the repository's explicit freshness requirement. A base move alone does not
+  invalidate passing checks on an unchanged PR head.
 - **Every PR lands through the forge.** Never merge into a local default branch
   and push, and never push straight to the default branch. Do local git work
   only on the PRs' own branches, in a temporary worktree you remove afterwards.
@@ -82,20 +84,22 @@ Work in a temporary worktree. For each PR in order:
 2. If this PR's base is another work-set PR, wait until that parent has
    merged. Retarget with `gh pr edit <n> --base <default-branch>` when GitHub
    has not already.
-3. Update the PR branch onto the current default. Resolve conflicts on that
-   branch with [resolve-pr-conflicts](../resolve-pr-conflicts/SKILL.md).
+3. Check whether this PR needs a base update under the repository's policy.
+   Resolve conflicts on its branch with
+   [resolve-pr-conflicts](../resolve-pr-conflicts/SKILL.md).
    Confirm `isCrossRepository` and
    `maintainerCanModify` match the remote you will update. Get explicit
-   approval before rewriting a branch you do not own, and disclose every
-   rewrite.
-4. Push the update. Drafts block: `gh pr ready` first, with user direction
+   approval before rewriting a branch you do not own unless already authorized,
+   and disclose every rewrite.
+4. Push any needed update. Drafts block: `gh pr ready` first, with user direction
    where the draft was deliberate.
 5. Verify with the repo's own checks on this PR: build, format, lint, and the
    tests for its blast radius. Wait until every required check on this PR is
    green using [babysit](../babysit/SKILL.md). If the PR cannot be made
    mergeable on the current default, stop and ask.
-6. Re-read the head SHA and the default-branch tip. If either moved since
-   verification, update and re-verify. Then:
+6. Re-read the head SHA, mergeability, and repository gates. A new head needs
+   its own passing checks. A base move needs another update only when the
+   repository policy or a new conflict requires it. Then:
 
 ```sh
 gh pr view <n> --json headRefOid
@@ -105,14 +109,17 @@ gh pr merge <n> <verified-method-flag> --delete-branch --match-head-commit <sha>
 A merge queue queues the PR and picks its own method; wait until it lands
 before starting the next PR.
 
-If a teammate pushes to a work-set branch or closes a work-set PR, stop and
-ask. If someone merges a work-set PR to the default branch, that is a trunk
-move: continue with the remaining PRs.
+If a teammate pushes to a work-set branch, inspect and preserve their changes,
+coordinate when possible, and verify the new head. Ask only if ownership or
+the intended resolution is unclear. A closed PR is no longer mergeable: report
+it and continue with independent PRs. If someone merges a work-set PR, continue
+with the remaining PRs.
 
 `--admin` only with explicit approval, disclosed in the report.
 
-After the last merge, run the full suite on the actual default branch and
-confirm integration tests ran rather than skipped. Remove the worktree.
+After the last merge, verify the repository's required integration result on
+the default branch. Use its CI run when that supplies the required evidence;
+run additional local checks for uncovered risks. Remove the worktree.
 
 ## 5. Report
 

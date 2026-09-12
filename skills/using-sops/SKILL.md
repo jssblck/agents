@@ -1,6 +1,6 @@
 ---
 name: using-sops
-description: "Use when a task needs secrets or key setup in a repo with .sops.yaml and secrets/<env>.env, or a pnpm secrets script."
+description: "Use for secrets or key setup in a repo with .sops.yaml, encrypted environment files, or a pnpm secrets script."
 ---
 
 # Using sops

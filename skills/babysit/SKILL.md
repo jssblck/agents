@@ -21,7 +21,8 @@ gh pr view <n> -R <owner/repo> --json state,url,headRefOid,baseRefName,baseRefOi
 Record the head SHA, base branch, and base SHA. Stop watching if the PR is closed or
 merged. Handle `mergeable` before starting a watcher:
 
-- `CONFLICTING`: use [resolve-pr-conflicts](../resolve-pr-conflicts/SKILL.md)
+- `CONFLICTING`: for monitoring-only requests, report the conflict. When repair
+  is authorized, use [resolve-pr-conflicts](../resolve-pr-conflicts/SKILL.md)
   against this PR's current base, then repeat this inspection after pushing.
 - `UNKNOWN`: GitHub has not established mergeability. Recheck after a short
   delay; if still unknown, inspect a fetched head/base locally or report the
@@ -100,9 +101,10 @@ limitation rather than treating green CI as a completed review.
 
 Re-read the PR state, head SHA, base branch and SHA, and mergeability after the watcher
 exits. Take a final checks snapshot and confirm the expected checks appeared.
-If the head or base changed, or conflicts appeared, repeat the preflight and
-watch the current checks before claiming success. A watcher exit alone does
-not prove merge readiness or review approval.
+If the head changed, repeat the preflight and watch checks for the new head.
+If only the base changed, reassess mergeability and the repository's freshness
+requirements; do not restart completed checks solely for that change. A watcher
+exit alone does not prove merge readiness or review approval.
 
 Report the PR, verified head SHA, check results, and any review or workflow
 blocker. Continue to merging only when the user's task authorizes it.

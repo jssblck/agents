@@ -35,9 +35,10 @@ unless they want it.
 
 ## Write (explicit ask only)
 
-Do not comment, submit, vote, or message unless the current message
-clearly asks for that action. After a write, report the permalink or
-the on-page error.
+Do not comment, submit, vote, or message unless the user has explicitly
+authorized that action in the current task. Preserve authorization across
+clarifications unless the user changes or withdraws it. After a write, report
+the permalink or the on-page error.
 
 ## Forbidden
 

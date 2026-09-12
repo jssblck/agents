@@ -7,8 +7,8 @@ user-invocable: true
 # Ship it
 
 For a full shipping request, finish with the change committed, pushed, open as a
-ready pull request, and green in CI. Open a new PR as non-draft, then run signoff
-and local verification while CI runs.
+ready pull request, and green in CI. Open a new PR as non-draft, then finish
+the repository's required review and local verification while CI runs.
 
 A narrower request keeps its scope. For CI-only repair, fix the affected branch
 and checks without creating a PR or changing its draft/ready state, base, title,
@@ -49,10 +49,11 @@ Explain why the change is needed and what changed. Reference the originating
 issue with `Fixes #<n>` when applicable. Preserve existing context when editing
 the body. Do not add labels or reviewers unless requested.
 
-## Run signoff and verify proportionally
+## Run configured review and verify proportionally
 
-For a full shipping request, run the project's signoff workflow after opening
-or reusing the PR and setting its intended readiness.
+For a full shipping request, run the project's signoff workflow if it defines
+one, after opening or reusing the PR and setting its intended readiness. Use
+the repository's current review policy; do not invent a gate when none exists.
 
 Read the repo's check commands. Run required local checks and the tests that
 cover the changed behavior. Generate required code before building.
