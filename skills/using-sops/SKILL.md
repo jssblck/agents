@@ -19,13 +19,16 @@ repo that has the wrapper.
 | Identity   | Scope       | Where the private key lives                                       | Decrypts    |
 | ---------- | ----------- | ---------------------------------------------------------------- | ----------- |
 | `agent`    | user-wide   | `~/.config/sops/age/keys.txt` on every machine agents run on; `SOPS_AGE_KEY` in cloud sandboxes | `dev.env` |
-| `personal` | user-wide   | the user's password manager                                      | every file  |
-| `prod`     | per project | that project's production platform only                          | `prod.env`  |
+| `personal` | user-wide   | the user's password manager                                      | files listing its public key |
+| `prod`     | per project | that project's production platform and documented password-manager item | `prod.env` |
 
 `.sops.yaml` lists recipients by public key. Encrypting needs no private key; decrypting
 or editing needs one recipient's private key. `agent` and `personal` are local-development
 keys shared by every project; `prod` is minted per project so one leaked deploy variable
-exposes one project.
+exposes one project. These are conventions, not guaranteed recipients. Existing repos
+may use only shared `dev` and `prod` keys. Read the repository's secrets guide and
+`.sops.yaml` before choosing a key; the encrypted file's recipient metadata determines
+which identities can decrypt it.
 
 ## Agent workflow
 
@@ -42,14 +45,31 @@ pnpm secrets exec dev -- node apps/worker/src/main.ts
 `exec` puts the decrypted values in the child's environment (over the shell's), removes
 `SOPS_AGE_KEY*` from it, forwards signals, and exits with the child's status.
 
-Prod secrets need elevation. When a task requires reading or writing `prod.env`:
+When an authorized task needs production secrets, perform elevation yourself. Do not
+ask the user to run the command or reconfirm an already authorized task.
 
-1. Check for `.age/elevated` in this checkout. If present, prod commands work; carry on.
-2. If absent, ask the user to run, in a terminal of their own:
-   `op read 'op://Personal/age-personal/private key' | pnpm secrets elevate`
-   (or however their password manager prints the key). Say why you need it.
-3. Elevation is per checkout and lasts until `.age/elevated` is deleted. Do not copy it
-   into another worktree.
+1. Check access with `pnpm secrets exec prod -- true`, which prints no secret values.
+   An existing `.age/elevated` file alone does not prove that its key can decrypt prod.
+2. If access fails, read the repo's secrets guide and recipient configuration. Use the
+   documented account, vault, item, and field for a matching key. Do not assume a
+   `Personal` vault, an `age-personal` recipient, or the CLI's default account.
+3. Run the documented read yourself, piping the key directly into the wrapper:
+   `op read 'op://VAULT/ITEM/FIELD' --account ACCOUNT | pnpm secrets elevate`.
+   Replace the placeholders with the discovered identifiers; never print the key.
+4. Confirm decryption with `pnpm secrets exec prod -- true`, then continue the task.
+
+When the documented 1Password location is missing, use `op account list --format json`
+and `op vault list --account ACCOUNT --format json` to identify the correct account and
+vault. Search item metadata in that vault for the documented key name with
+`op item list --account ACCOUNT --vault VAULT --format json`; inspect only matching
+items. Pass `--account` on subsequent reads. `Private`, `Personal`, and `Shared` are
+distinct names, not interchangeable aliases. If a key is found but cannot decrypt,
+compare its public key with the file's recipients instead of repeatedly trying vault
+names. Keep private keys out of tool output.
+
+Ask the user only when progress requires their interaction, such as unlocking
+1Password or granting unavailable access. State the actual blocker. Elevation is per
+checkout and lasts until `.age/elevated` is deleted; do not copy it into another worktree.
 
 When you add a variable, add it to the env schema and to every `secrets/<env>.env` you can
 decrypt. If you cannot decrypt prod, say so in the PR: the typed env check fails the prod

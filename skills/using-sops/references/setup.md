@@ -28,8 +28,10 @@ Each file holds a comment with the public key (`age1...`) and the private key
 (`AGE-SECRET-KEY-1...`). Then:
 
 - `personal.txt`: store the whole file in the password manager as `age-personal`, with the
-  private key in a field you can read from the CLI (for 1Password: `op read
-  'op://Personal/age-personal/private key'`). Delete the local file.
+  private key in a field you can read from the CLI. Record the exact 1Password account,
+  vault, item, and field; vault names differ between accounts. Read it with `op read
+  'op://VAULT/age-personal/private key' --account ACCOUNT`, substituting those recorded
+  identifiers. Delete the local file.
 - `agent.txt`: keep for step 3, then store a copy in the password manager as
   `age-agent` for future machines. Delete the local file after step 3.
 
@@ -110,8 +112,10 @@ Once per new repository (the `bootstrap` skill asks for this):
        age: 'age1PERSONAL,age1PROD'
    ```
 3. `pnpm secrets init dev && pnpm secrets init prod`.
-4. Elevate the checkout so you can write prod values:
-   `op read 'op://Personal/age-personal/private key' | pnpm secrets elevate`.
+4. Elevate the checkout yourself using the recorded location of a recipient key:
+   `op read 'op://VAULT/ITEM/private key' --account ACCOUNT | pnpm secrets elevate`.
+   Confirm with `pnpm secrets exec prod -- true`. Existing repos may list only their
+   project production key as a recipient; follow their secrets guide and `.sops.yaml`.
 5. `pnpm secrets set dev KEY value` and `pnpm secrets set prod KEY value` as needed. Commit
    `.sops.yaml` and `secrets/`.
 
