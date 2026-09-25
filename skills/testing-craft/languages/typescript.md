@@ -9,8 +9,9 @@ suite with type errors is not green).
   are lint errors under the anti-slop config (`anti-slop/no-module-mocking`;
   see the code-craft TypeScript dialect for the lint setup); avoid `vi.spyOn`
   on your own functions too. Both pin implementation. Use real
-  implementations, a real in-memory store, MSW for HTTP boundaries, real temp
-  dirs.
+  implementations, real fixture databases and temporary directories, and
+  Vercel Emulate for service APIs. Drive the native SDK or HTTP client against
+  the fixture's returned URL; use custom emulators for unsupported or owned APIs.
 - `fast-check` for property-based tests. Deterministic: fake timers
   (`vi.useFakeTimers`) instead of real `setTimeout` waits; inject the clock
   and RNG.

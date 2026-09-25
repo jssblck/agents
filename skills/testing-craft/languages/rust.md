@@ -4,14 +4,12 @@ How the universal core is spelled in Rust tests.
 
 Runner: `cargo test`.
 
-- Inline `#[cfg(test)] mod tests { use super::*; }` while a module is small;
-  migrate a large test body to a sibling `tests.rs` (`#[cfg(test)] mod tests;`)
-  if test edits start forcing library recompiles.
+- Drive the public CLI or application first; put real boundary workflows in
+  `tests/`. Group related scenarios into a modular integration crate when useful.
+  Reserve `#[cfg(test)]` modules for justified isolated failure coverage.
 - `#[tokio::test]` for async, `#[should_panic]` for panic paths.
-- No mocks. Real pure functions, `tempfile` dirs, throwaway `git init` repos,
-  `sqlx::test` for Postgres. A deterministic in-memory implementation of a
-  trait is fine; recording mocks are not.
+- Use `tempfile` directories, throwaway Git repositories, and `sqlx::test` for
+  Postgres. Drive the real HTTP client against Vercel Emulate when a service double
+  is needed, with custom emulators for unsupported or owned APIs.
 - `proptest` for properties, `criterion` with `black_box` for benchmarks. Keep
   doctests runnable (use `?` in examples, `#` to hide setup lines).
-- For internal apps prefer `src/` unit tests over many `tests/*.rs` binaries;
-  use at most one modular integration crate for a real external boundary.
