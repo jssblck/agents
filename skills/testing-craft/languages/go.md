@@ -14,9 +14,10 @@ Runner: `go test ./...`; always `go test -race` in CI.
 - Standard `testing` package; `t.Run` for subtests, `t.Helper()` in helpers,
   `t.TempDir()`/`t.Cleanup()` for fixtures. `testify/require` is acceptable
   for assertions; do not pull in heavy frameworks.
-- No mocks of your own code. Define the small consumer interface and pass a
-  real test implementation, or use `httptest.Server` for HTTP, a real temp
-  dir/db for storage.
+- Drive workflows with real repositories and temporary directories or databases.
+  Use the real Go HTTP client against Vercel Emulate for service doubles, including
+  custom APIs. Keep direct function cases only for the isolated failures justified
+  by the core guidance.
 - Property tests via `testing/quick` or `gopter`. Fuzz tests with `go test
   -fuzz`. Benchmarks with `testing.B` and `b.N`.
 - Determinism: inject the clock and randomness; never `time.Sleep` to

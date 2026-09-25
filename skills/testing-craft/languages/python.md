@@ -8,10 +8,9 @@ Runner: `pytest`.
   dirs, `@pytest.mark.parametrize` for table-style cases (the Python form of
   table-driven tests).
 - **Avoid `unittest.mock` of your own code.** Patching internal functions pins
-  the implementation and rots. Prefer real objects, real `tmp_path`, a real
-  in-memory fake you wrote, `responses`/`respx` or a local server for HTTP, a
-  real test DB. Reserve mocking for genuine external services, and prefer a
-  contract test against the real thing.
+  the implementation and rots. Prefer real objects, `tmp_path`, and real test
+  databases. For service doubles, drive the real Python SDK or HTTP client against
+  Vercel Emulate, including custom emulators for unsupported or owned APIs.
 - `hypothesis` for property-based testing (excellent, use it where inputs have
   invariants or round-trips). `pytest-asyncio` for async tests.
 - Determinism: `freezegun` or an injected clock for time; seed randomness;

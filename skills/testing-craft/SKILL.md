@@ -7,8 +7,9 @@ argument-hint: "[rust|typescript|go|python] [target]"
 
 # Testing Craft
 
-Choose tests for the defects they catch. Preserve useful regression coverage
-without binding tests to incidental implementation details.
+Prefer end-to-end tests that prove a feature works through its public boundary.
+Use real integration coverage when a full end-to-end flow is impractical. Keep
+an isolated test only for a specific defect the broader coverage reasonably misses.
 
 ## Scope and verification
 
@@ -24,19 +25,19 @@ without binding tests to incidental implementation details.
 
 ## Choose the boundary and layer
 
-Prefer inputs and observable outputs through the feature's public boundary.
-Private helpers can merit direct tests for substantial algorithms or invariants;
-do not make them public solely for testing.
+Use this order, rather than defaulting to unit tests because they run quickly:
 
-Use the cheapest layer that catches the risk:
+1. Drive the running application, public CLI, or complete workflow. Assert what
+   its user or caller observes, including persisted effects.
+2. When a full flow is impractical, exercise real integration boundaries: routes,
+   jobs, repositories, SDKs, transport, serialization, and rendered controls.
+3. Retain isolated coverage only for a named failure that the broader tests cannot
+   reasonably exercise, such as a substantial algorithm, race, or malformed input.
+   Record the reason and the boundary it leaves untested.
 
-| Risk | Suitable starting point |
-|---|---|
-| Parsing, pure logic, state transitions | Unit test |
-| Collaboration between components | Real objects or a maintained fake |
-| Service or HTTP contract | Integration test with a hermetic server or contract-tested fake |
-| UI wiring | Drive the rendered control rather than calling its handler |
-| Cross-system behavior | Focused end-to-end test |
+Never write unit tests after the implementation to restate its code. Before
+testing a system in isolation, enumerate its failure modes, write tests for those
+failures, then implement it. Do not expose private helpers solely for testing.
 
 Use existing automation when it covers the changed behavior. Manual exercise is
 useful when it catches a risk that automation does not, such as visual layout.
@@ -51,9 +52,11 @@ implementation without protecting its contract. For a suspect test, identify:
 - Whether it rejects a valid implementation with the same behavior.
 
 Rewrite brittle assertions to check results, state, rendered output, or external
-effects. Remove a test only when it has no useful contract to protect or its
-coverage is redundant. A test passing while some other behavior breaks is not
-a reason to delete it.
+effects. Delete a unit test that cannot catch a real defect missed by the
+end-to-end tests, integration tests, or type checker. Run its replacement before
+deleting it, and preserve useful invalid-input, ownership, concurrency, and failure
+cases. Renaming a mocked test does not strengthen its coverage. Keep checks that
+enforce documented repository policy.
 
 Interaction assertions are useful when the interaction is itself the contract,
 such as sending one email, avoiding a network request on a cache hit, or checking
@@ -61,20 +64,30 @@ authorization before a write. Assert only the relevant calls and arguments.
 
 ## Choose collaborators
 
-Prefer the real implementation when it is fast, deterministic, and isolated.
-Use temporary directories, throwaway repositories, or local servers where useful.
+Use real repositories and storage: isolated database instances, fixture SQLite,
+temporary directories, and throwaway Git repositories. Do not replace the
+database behavior under test with a fake repository.
 
-When the real dependency is unsuitable:
+When a service double is needed, use [Vercel Emulate](https://github.com/vercel-labs/emulate).
+Prefer a built-in provider; use a custom emulator for unsupported APIs or the
+project's own services. Install its upstream `emulate` skill into the repository
+through the project's skill installer and read it before use. Declare the test
+dependency in every workspace that imports it.
 
-- Use a narrow working fake for stateful behavior. Check shared fakes against
-  the real contract where practical.
-- Use a stub for canned query results or to force a failure.
-- Use a mock for interactions whose occurrence, absence, or order is the contract.
+- Drive the real SDK or client over native HTTP. Inject the emulator's URL through
+  the existing dependency boundary. Preserve headers, bodies, and cancellation.
+- Validate requests and maintain observable state. Canned success responses
+  behind an HTTP server do not establish a working integration.
+- Give each fixture its own state and an OS-assigned port (`port: 0`). Reset or
+  recreate state between scenarios, and await cleanup even after failure. Never
+  share mutable state, fixed ports, or persistence files across parallel worktrees.
+- Exercise relevant failures through the service boundary. Check authorization,
+  pagination, retries, and cancellation when they are part of the contract.
 
-Avoid elaborate mock setups that duplicate implementation details. A wrapper
-around a third-party dependency can provide a stable seam, but do not add one
-solely to obey a ban on mocking types you do not own. Use the project's existing
-seams and library-supported testing tools when they fit.
+For a justified isolated failure case, inject only the dependency needed to
+produce it. Avoid mocking the project's own functions or scripting their internal
+call sequence. Follow explicit project constraints; report a tool limitation
+instead of silently substituting a lower-fidelity test and calling it end-to-end.
 
 ## Write readable tests
 
@@ -100,9 +113,9 @@ seams and library-supported testing tools when they fit.
 
 ## Establish regression sensitivity
 
-For a bug fix, reproduce the actual failure before changing production code when
-feasible. Confirm the regression test fails for the intended reason, then passes
-with the fix.
+For a bug fix, write the failing scenario before changing production code.
+Confirm it fails for the intended reason, then passes with the fix. If the real
+failure cannot be reproduced, state the evidence and remaining uncertainty.
 
 For other changes, identify the defect the assertion detects. Use targeted
 mutation when sensitivity is uncertain or the risk warrants it. If mutating
@@ -112,6 +125,18 @@ Inverting an assertion checks execution, not sensitivity to the intended defect.
 Routine test edits and green-to-green refactors do not require production
 mutations. Preserve the behaviors covered and compare relevant results before
 and after a refactor. Report verification you could not perform.
+
+## Leave repeatable proof
+
+End each end-to-end test with a verifiable artifact: its exact command or
+replayable flow and the output, screenshot, or recording it produced. Use the
+project's artifact directory and publication rules. A rendered component test
+alone does not prove navigation, authentication, or native platform wiring.
+
+Run focused scenarios during iteration and the required full gates before
+shipping. Repeat a passing check only after relevant edits, failures, or an
+unresolved risk. Measure slow suites before changing their execution; preserve
+isolation and useful coverage when improving runtime.
 
 ## Language references
 
