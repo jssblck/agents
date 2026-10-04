@@ -1,7 +1,8 @@
 # Per-platform strategies
 
-Try 2 to 5 strategies in order. Free first. Paid only if the env key is
-set, and only after you have told the user it will spend quota.
+Use the relevant platform's chain. Free first. Paid providers require
+configured credentials and authorization for this task; follow
+[credential guidance](auth-keys.md).
 
 ---
 
@@ -95,7 +96,7 @@ If it 403s or times out, continue.
 
 ### 2. Rendered preview (limited)
 
-Open the permalink with Codex's built-in browser tools and inspect the page.
+Open the permalink with the host's available browser tools and inspect the page.
 
 Expect body text and a handle. Engagement, replies, and the rest of a
 thread are often missing. Dismiss a "Sign up to see" modal if one is
@@ -122,22 +123,22 @@ Older tweets are cached more often than recent ones.
 
 ### 5. ScrapeCreators (paid)
 
-Requires `$SCRAPECREATORS_API_KEY`. Skip if unset.
+Requires the protected ScrapeCreators curl config or an equivalent credential-store
+source. Skip if unconfigured or unauthorized.
 
 ```bash
-curl -sS "https://api.scrapecreators.com/v1/twitter/tweet?url=<encoded-url>" \
-  -H "x-api-key: $SCRAPECREATORS_API_KEY"
+curl -sS --config "$HOME/.config/social-fetch/scrapecreators.curl" "https://api.scrapecreators.com/v1/twitter/tweet?url=<encoded-url>"
 ```
 
 Confirm the path in ScrapeCreators docs on first use.
 
 ### 6. Apify (paid)
 
-Requires `$APIFY_API_TOKEN`. Use `apify/twitter-scraper` or a current
-equivalent.
+Requires the protected Apify curl config or an equivalent credential-store
+source and task authorization. Use `apify/twitter-scraper` or a current equivalent.
 
 ```bash
-curl -sS -X POST "https://api.apify.com/v2/acts/<actor-id>/run-sync-get-dataset-items?token=$APIFY_API_TOKEN" \
+curl -sS --config "$HOME/.config/social-fetch/apify.curl" -X POST "https://api.apify.com/v2/acts/<actor-id>/run-sync-get-dataset-items" \
   -H "Content-Type: application/json" \
   -d '{"tweetUrls": ["<url>"], "maxItems": 1}'
 ```
@@ -159,8 +160,7 @@ for `linkedin.com/posts/...`. Specific post URLs usually need login.
 ### 2. ScrapeCreators (paid)
 
 ```bash
-curl -sS "https://api.scrapecreators.com/v1/linkedin/post?url=<encoded-url>" \
-  -H "x-api-key: $SCRAPECREATORS_API_KEY"
+curl -sS --config "$HOME/.config/social-fetch/scrapecreators.curl" "https://api.scrapecreators.com/v1/linkedin/post?url=<encoded-url>"
 ```
 
 ### 3. Apify (paid)
@@ -184,8 +184,7 @@ Metadata only. Often blocked.
 ### 2. ScrapeCreators (paid)
 
 ```bash
-curl -sS "https://api.scrapecreators.com/v1/instagram/post?url=<encoded-url>" \
-  -H "x-api-key: $SCRAPECREATORS_API_KEY"
+curl -sS --config "$HOME/.config/social-fetch/scrapecreators.curl" "https://api.scrapecreators.com/v1/instagram/post?url=<encoded-url>"
 ```
 
 ### 3. Apify (paid)
@@ -207,8 +206,7 @@ curl -sS -A "Mozilla/5.0" "<url>" | grep -E 'og:(title|description|video)'
 ### 2. ScrapeCreators (paid)
 
 ```bash
-curl -sS "https://api.scrapecreators.com/v1/tiktok/video?url=<encoded-url>" \
-  -H "x-api-key: $SCRAPECREATORS_API_KEY"
+curl -sS --config "$HOME/.config/social-fetch/scrapecreators.curl" "https://api.scrapecreators.com/v1/tiktok/video?url=<encoded-url>"
 ```
 
 ### 3. Apify (paid)

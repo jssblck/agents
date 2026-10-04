@@ -1,21 +1,15 @@
 ---
 name: reddit
-description: "Use for Reddit browsing, search, inbox checks, or explicitly requested account actions in the shared computer's signed-in Chrome session."
+description: "Browse Reddit or perform explicitly requested account actions through the existing signed-in Chrome session."
 ---
 
-# Reddit (signed-in Chrome)
+# Reddit in signed-in Chrome
 
-Drive the shared computer's Chrome profile where the user is already
-signed in. Use page-level browser tools only (browserUse on Grok Bot).
-
-Confirm the account menu shows a signed-in user before you do anything
-else. If Chrome is logged out, stop and have them sign in on that
-Chrome. Do not invent a workaround. Act as whatever account is signed
-in. Do not switch accounts.
+Use the host's page-level browser tools on the existing Chrome profile on the
+machine selected for the task. Confirm the signed-in account before reading or
+acting; do not switch accounts. If logged out, ask the user to sign in there.
 
 ## Direct URLs
-
-Open these. Do not click through the site to rebuild them.
 
 - Inbox: https://old.reddit.com/message/inbox
 - Unread: https://old.reddit.com/message/unread
@@ -27,31 +21,14 @@ Open these. Do not click through the site to rebuild them.
 - Sub search: https://old.reddit.com/r/{sub}/search?q={query}&restrict_sr=on
 - Thread: https://old.reddit.com/r/{sub}/comments/{id}/
 
-## Read (default)
+"Check reddit" is read-only. Report relevant titles, permalinks, authors, and
+asks; do not dump whole pages unless requested.
 
-"Check reddit" is read-only. Open the URL, read the page, report titles,
-permalinks, authors, and the specific ask. Do not dump the whole page
-unless they want it.
+Comment, submit, vote, or message only with explicit authorization in the
+current task. Authorization persists through clarifications unless changed or
+withdrawn. After a write, report the permalink or on-page error.
 
-## Write (explicit ask only)
-
-Do not comment, submit, vote, or message unless the user has explicitly
-authorized that action in the current task. Preserve authorization across
-clarifications unless the user changes or withdraws it. After a write, report
-the permalink or the on-page error.
-
-## Forbidden
-
-- Copying cookies, tokens, or profile files out of Chrome
-- curl or any HTTP client with a copied session
-- oauth.reddit.com, script apps, or ~/.reddit/credentials
-- Attaching a debugger to Chrome or launching a second browser that
-  copies the signed-in profile
-- Creating a Reddit app or a new account
-
-## What to tell them
-
-- Read results: titles, permalinks, authors, and the specific ask.
-- Write results: the permalink or the on-page error.
-- Logged out: Chrome is not signed in. They need to sign in on the
-  shared computer.
+Do not copy cookies, tokens, or profile files, use an HTTP client with a copied
+session, attach a debugger to Chrome, or launch another browser with a copied
+profile. Do not create Reddit apps or accounts, use oauth.reddit.com or script
+apps, or use ~/.reddit/credentials.
