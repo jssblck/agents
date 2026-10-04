@@ -1,63 +1,48 @@
-# Auth keys
+# Credentials for paid providers
 
-Free strategies cover Bluesky, Mastodon, HN, Reddit, and a partial X
-preview. X threads, LinkedIn posts, Instagram, TikTok, and Threads
-need a paid key for complete data.
+Use paid providers only when the user has authorized that service for the
+current task. An existing key is not authorization to spend quota. Preserve
+approval across clarifications; do not ask again solely because a session
+changed. Stay on free strategies if access or authorization is unavailable.
 
-## Which key unlocks what
+ScrapeCreators supports platform-specific fetches. Apify offers Actors for
+social scraping. Check the provider's current route, Actor, and pricing when
+a paid call is needed; do not set up accounts or keys preemptively.
 
-| Key | Unlocks | Cost (approx, 2026) |
-|---|---|---|
-| `$SCRAPECREATORS_API_KEY` | X tweets/threads/replies, LinkedIn posts, Instagram, TikTok, sometimes Threads | Pay-as-you-go, about $0.005 to $0.02 per post |
-| `$APIFY_API_TOKEN` | Most platforms via Actors | Per-actor, often $1 to $5 / 1K results |
+## Storage and requests
 
-Do not put keys in chat, in the skill files, or in git. Read them from
-the environment. On a Cloud Agent host, that means an environment
-secret. On a laptop, a shell profile is enough.
+Keep credentials in the tool's credential store or 1Password. The recipes use
+protected curl config files under `~/.config/social-fetch/` as one local option.
+Keep the directory mode 700 and files mode 600, outside Git. Populate them
+through a secure local editor or credential-store interface; never request
+a plaintext key in chat or print the file.
 
-## ScrapeCreators
+The config contains the authentication header. For ScrapeCreators,
+`scrapecreators.curl` has this format:
 
-1. Sign up at https://scrapecreators.com
-2. Copy the API key from the dashboard
-3. Export it in the environment the agent actually sees:
-
-```bash
-export SCRAPECREATORS_API_KEY="<key>"
+```text
+header = "x-api-key: <key>"
 ```
 
-4. Confirm it is present without printing the secret:
-   `test -n "$SCRAPECREATORS_API_KEY" && echo set`
+For Apify, `apify.curl` has this format:
 
-## Apify
+```text
+header = "Authorization: Bearer <token>"
+```
 
-1. Sign up at https://apify.com
-2. Copy the token from Settings → Integrations → API
-3. Export `$APIFY_API_TOKEN` the same way
-4. Confirm with `test -n "$APIFY_API_TOKEN" && echo set`
+Apify supports [Bearer header authentication](https://docs.apify.com/api/v2/getting-started#authentication).
+Use `curl --config <protected-file>`, so command arguments contain only the
+path. A credential store can instead supply curl configuration over stdin
+with `curl --config -`. Never expand a key into `-H`, put it in a URL, or
+store it in a shell startup file. Avoid verbose traces that reveal headers.
+Credentials remain machine-local.
 
-## Free-only mode
-
-If neither key is set:
-
-- Bluesky / Mastodon / HN / Reddit: full fetch
-- X: preview (text, author, basic engagement). No reliable thread or
-  reply tree.
-- LinkedIn profiles: recent activity may be visible. Specific posts
-  usually are not.
-- Instagram / TikTok / Threads: Open Graph title/description/image at
-  best
-
-That is enough for one-off reads. Set a key when a real workflow is
-blocked, not preemptively.
+Check whether the configured file is readable without displaying its contents.
+If there is no configured credential source, report the available free or
+partial result and the missing provider access.
 
 ## Cost discipline
 
-- Check `~/Documents/social-fetches/_cache/` first when it exists
-- 24h TTL on successful fetches
-- Do not add `--with-replies` or `--thread` unless asked. Those
-  multiply quota.
-- For bulk work (dozens of posts from one account), prefer a batched
-  Apify actor over per-URL ScrapeCreators calls
-
-Prompt before the first paid call in a session. If the user declines,
-stay on free strategies and return partial data.
+Fetch the requested scope. Replies and threads can increase quota.
+Use a valid existing cache where appropriate; skip it when freshness is requested.
+Bulk requests may suit a batched Actor after the user authorizes that scope.

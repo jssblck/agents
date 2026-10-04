@@ -106,10 +106,23 @@ and could not fetch the other posts.
 
 ## Return to the user
 
-1. One line: `<platform> · <handle> · <posted_at> · "<short text>"`
-2. `--save` path when that flag is set
-   (`~/Documents/social-fetches/<platform>-<id>.json`)
-3. The JSON itself
+Default to a readable answer with source attribution. Return this JSON when
+structured data is requested or a caller needs it. For `--save`, return the
+saved path. State material coverage limits in either format.
 
-If the fetch is partial, say so in the one-liner. Name the key that
-would complete it.
+## Request options
+
+These flags describe requested behavior, not a separately installed CLI.
+
+| Flag | Behavior |
+|---|---|
+| `--with-replies` | Top-level replies, one hop; may increase paid quota |
+| `--thread` | Same-author thread, when available |
+| `--raw` | Include the raw API or scrape payload |
+| `--media` | Download media to `~/Documents/social-fetches/<platform>-<id>/` |
+| `--save` | Save JSON to `~/Documents/social-fetches/<platform>-<id>.json` |
+| `--no-cache` | Require a fresh fetch |
+
+The default is the post itself, with media URLs and no replies or downloads.
+If the existing cache is used, successes expire after 24 hours. Skip it for
+`--no-cache`, `--with-replies`, and `--thread`.
