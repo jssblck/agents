@@ -1,0 +1,4 @@
+interface:
+  display_name: "Database Craft"
+  short_description: "For Postgres schema, query, and job design"
+  default_prompt: "Use $database-craft to design or review the database work in this change."

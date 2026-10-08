@@ -7,9 +7,10 @@ Runner: `pytest`.
 - pytest. Plain `assert`, fixtures via `@pytest.fixture`, `tmp_path` for temp
   dirs, `@pytest.mark.parametrize` for table-style cases (the Python form of
   table-driven tests).
-- **Avoid `unittest.mock` of your own code.** Patching internal functions pins
-  the implementation and rots. Prefer real objects, `tmp_path`, and real test
-  databases. For service doubles, drive the real Python SDK or HTTP client against
+- **Type doubles against the real interface:** a fake that implements the
+  `Protocol`, or `create_autospec(real, spec_set=True)`. Patch at a seam, never
+  the unit under test or its internal helpers. At the integration rung, use
+  `tmp_path`, real test databases, and the real SDK or HTTP client against
   Vercel Emulate, including custom emulators for unsupported or owned APIs.
 - `hypothesis` for property-based testing (excellent, use it where inputs have
   invariants or round-trips). `pytest-asyncio` for async tests.

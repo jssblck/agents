@@ -115,6 +115,14 @@ mypy/pyright have nothing to check and the rest of this file does not apply.
 - Use `contextlib` (`with`, `contextmanager`) for cleanup; do not hand-roll
   try/finally where a context manager exists.
 
+## The proof ladder in Python
+
+[Proof ladder](../principles/proof-ladder.md) rungs: strict pyright or mypy with
+pydantic or msgspec decoders for types (`NewType` is only a label), constructor
+injection, specific exceptions, and context managers for effects, a capability
+object minted by one checking module for proofs, and
+[database-craft](../../database-craft/SKILL.md) for Postgres.
+
 ## Async (Python-specific)
 
 - `asyncio` with `async`/`await`. `asyncio.gather(*aws)` for parallel,

@@ -93,6 +93,14 @@ go build ./...
   failures; never for ordinary control flow. `recover` only at well-defined
   boundaries (a server handler that must not crash the process).
 
+## The proof ladder in Go
+
+[Proof ladder](../principles/proof-ladder.md) rungs: unexported fields and
+sealed interfaces for types, `golangci-lint` in the gate, constructor-injected
+interfaces with returned errors and `context.Context` for effects, a capability
+value with unexported fields minted by the checking package for proofs, and
+[database-craft](../../database-craft/SKILL.md) for Postgres.
+
 ## Interfaces and abstraction (core 8)
 
 - **Accept interfaces, return structs.** Functions take the narrow interface they

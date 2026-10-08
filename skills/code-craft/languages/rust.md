@@ -58,17 +58,113 @@ functions that claim fallibility they do not have). Configure lints in
 
 ## Errors (core 3)
 
-- **Libraries:** typed errors with `thiserror`, one enum of failure modes,
-  `#[from]` for conversions, `#[source]` to chain. Document them with a
-  `# Errors` section.
-- **Applications / top level:** `anyhow` (or `color_eyre`), `.context(...)` /
-  `.with_context(...)` as the error propagates, `?` for propagation.
-- **Bugs only:** `.expect("invariant: ...")` for things that cannot happen;
-  never `.unwrap()` in production paths. `panic!`/`unreachable!` for genuine
-  invariant violations, with a message.
+- **Server stack:** snafu, as above.
+- **Libraries elsewhere:** typed errors with the project's library (`snafu` or
+  `thiserror`), one enum of failure modes, `#[source]` to chain. Document them
+  with a `# Errors` section.
+- **Applications / top level:** `eyre` or `anyhow` in `main` only, with context
+  added as the error propagates.
+- **Bugs only:** where the lints allow it, `.expect("invariant: ...")` for
+  things that cannot happen; never `.unwrap()` in production paths. Under the
+  server stack's lints, return the operation's `Internal` variant instead.
 - **Fail closed:** a gate that errors or times out returns the block verdict, not
   a default pass.
 - Error messages: lowercase, no trailing period.
+
+## Server stack: Effect, taken apart
+
+For new Rust servers and the full project template, Jess's stack is tokio,
+axum, snafu, aerosol, and sqlx, with nextest, Clippy, and Nudge. In an existing
+repository, use its equivalents; adopting these is an architecture change to
+ask about first.
+
+Rust has no effect tracking, so the stack splits Effect's `Effect<A, E, R>`
+across plain Rust and lints. `E` is a `Result` with a small typed error enum,
+`R` is a capability list in the signature, and the crate graph, Clippy, and
+Nudge enforce both. It gives up Effect's fiber and scope runtime: there is no
+async drop, cancel safety is manual, and structured concurrency is a
+convention.
+
+### Requirements: aerosol capability rows
+
+A function takes its capabilities as an aerosol row; the row is its effect
+signature. Each capability is a newtype over a trait object, so tests swap the
+`Raw` implementation while the row keeps naming the newtype:
+
+```rust
+pub trait RawMailer: Send + Sync {
+    fn send(&self, to: &str, body: &str) -> Result<(), MailError>;
+}
+#[derive(Clone)]
+pub struct Mailer(Arc<dyn RawMailer>);
+
+pub fn remind(deps: &Aero![Clock, Mailer], to: &str) -> Result<(), RemindError> {
+    let Clock(clock) = deps.get();
+    let Mailer(mailer) = deps.get();
+    let sent_at = clock.now();
+    mailer
+        .send(to, &format!("reminder at {sent_at:?}"))
+        .context(SendSnafu { to })
+}
+
+// A caller with a wider row narrows it at compile time.
+pub fn handle(state: &Aero![Db, Clock, Mailer]) -> Result<(), RemindError> {
+    remind(state.as_ref(), "grace@example.com")
+}
+```
+
+- Use only the statically checked accessors outside the place that assembles
+  the container: `get`, plus `as_ref` and `into` to narrow a row. `try_get`,
+  `obtain`, `try_obtain`, `try_as_ref`, `try_into`, and the axum `Dep` and
+  `Obtain` extractors are checked at runtime and bypass the row; ban them
+  elsewhere with `disallowed_methods` and `disallowed_types`.
+- Ambient effects are capabilities too. Ban `Instant::now`, `SystemTime::now`,
+  `std::env::var`, and `reqwest::Client::new` outside assembly with
+  `disallowed_methods`.
+
+### Failures: snafu
+
+- One small snafu enum per operation, not a crate-wide `Error` that hides which
+  failures can occur.
+- Every `?` on a foreign error goes through `.context(SomeSnafu { .. })`, so
+  each propagation names a variant. No blanket conversions: no `#[from]`, no
+  `context(false)`, no hand-written `impl From<..> for ..Error`.
+- `eyre` only in `main`. `disallowed_types` bans `eyre::Report`,
+  `anyhow::Error`, and `snafu::Whatever` elsewhere.
+- One exhaustive `match` at the HTTP boundary maps each variant to a status
+  code and a retryable flag, with no `_` arm. Log errors once, there.
+- An invariant violation returns a single `Internal` variant with its captured
+  location, mapped to 500 and an alert. tower-http's `CatchPanicLayer` catches
+  panics.
+
+### Lints
+
+Set once in `[workspace.lints]`, all failing the gate:
+
+- No panicking shortcuts: `unwrap_used`, `expect_used`, `panic`, `todo`,
+  `unimplemented`, `unwrap_in_result`.
+- No swallowing: `let_underscore_must_use`, `unused_result_ok`,
+  `map_err_ignore`, and rustc's `unused_must_use` as deny.
+- No catch-alls: `wildcard_enum_match_arm`.
+- No quiet suppressions: `allow_attributes` and
+  `allow_attributes_without_reason`; use `#[expect(lint, reason = "...")]`.
+
+Clippy takes bans that need type resolution; Nudge takes textual patterns at
+write time, and `nudge check` runs the same rules in CI.
+
+### Proofs and the database
+
+- **Proofs:** a witness type with a private field, minted only by the module
+  that runs the check. To tie a proof to one value, brand both with an invariant
+  lifetime; the `generativity` crate implements the Ghosts of Departed Proofs
+  `name` for Rust.
+- **Database:** sqlx lives in a store crate, and the pure domain crate has no
+  I/O dependencies. Store functions take `&mut PgConnection` explicitly. A
+  request does its work in one transaction and preferably one statement, which
+  keeps handlers atomic when axum drops a cancelled handler future; see
+  [database-craft](../../database-craft/SKILL.md). `query!` checks SQL against
+  the schema at compile time, which moves query shape up to the first rung; CI
+  runs `cargo sqlx prepare --check`.
 
 ## Ownership and copies (core 5)
 
@@ -114,12 +210,14 @@ curate the public surface. Workspaces for large multi-crate projects with shared
 
 ## Testing (core 6)
 
-See the testing-craft skill:
+Keep tests out of `src/`: libraries set `test = false`, and one `tests/it`
+crate holds every test. See the testing-craft skill:
 [`testing-craft/languages/rust.md`](../../testing-craft/languages/rust.md).
 
 ## Docs
 
-`///` on public items, `//!` for module docs. `# Examples` (runnable),
+`///` on public items, `//!` for module docs. `# Examples` (runnable in
+published crates; internal crates set `doctest = false`),
 `# Errors`, `# Panics`, `# Safety` (for `unsafe`) sections. Intra-doc links
 (`[Vec]`). Document every `unsafe` block with a `// SAFETY:` comment
 (`clippy::undocumented_unsafe_blocks`).

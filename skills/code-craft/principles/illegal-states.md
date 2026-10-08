@@ -59,6 +59,27 @@ state = Loading | Error(message) | Ready(data)
 Carry the data on the variant that owns it. `Ready` holds the data; `Loading`
 and `Error` cannot accidentally expose a half-populated value.
 
+## Workflows: tagged unions or state machines
+
+A tagged union with an exhaustive match is enough when transitions are
+synchronous and pure, the states are flat, and nothing outlives the call.
+Adding a variant then fails to compile wherever it is unhandled.
+
+Use a state machine library (xstate in TypeScript) for a named workflow once
+any of these holds:
+
+- Async work belongs to a state and must stop when the state exits.
+- Timers or timeouts drive transitions.
+- States nest or run in parallel.
+- An in-flight workflow must persist and resume.
+- Several surfaces (web, mobile, desktop, jobs) drive the same workflow; keep
+  one machine they all share.
+
+A machine's types prove event shapes, context, and state names. They do not
+prove that a state rejects an event: an event the current state does not handle
+is ignored at runtime. Test that a state refuses what it must refuse, or route
+unexpected events to an explicit handler.
+
 ## Newtypes over primitives
 
 Wrap distinct domain values in distinct types so the compiler enforces the
