@@ -39,6 +39,22 @@ type checking where supported. Keep boundary parsing possible: do not ban
 unknown input types, runtime narrowing, or legitimate React effects globally.
 Use code-craft for language-specific guidance when needed.
 
+For a new TypeScript application or the full template, set up the stack from
+code-craft's [proof ladder](../code-craft/principles/proof-ladder.md) that the
+project will use: Effect with its language-service diagnostics in the type
+check, Effect Schema or Zod at boundaries, xstate for named workflows, gdp-ts
+with its lint preset, Vitest with `@effect/vitest`, Vercel Emulate for provider
+tests, and Postgres following [database-craft](../database-craft/SKILL.md). Make
+the linter fail on `any`, unchecked `as`, non-null `!`, floating promises, and
+suppressions without a reason. A prototype gets only what it uses.
+
+For a new Rust server, set up the server stack in code-craft's
+[Rust reference](../code-craft/languages/rust.md#server-stack-effect-taken-apart):
+tokio, axum, snafu, aerosol, and sqlx, the `[workspace.lints]` deny list with
+`disallowed_methods` and `disallowed_types`, nextest with one `tests/it` test
+crate and `test = false` on library and binary targets, and
+`cargo sqlx prepare --check` in CI.
+
 Define the check suite in one recipe shared by CI and local development.
 If hooks are requested, use the same recipe or a scoped fast subset. Do not run
 slow full-suite checks on every commit merely to duplicate CI.
@@ -46,7 +62,7 @@ slow full-suite checks on every commit merely to duplicate CI.
 ## Agent infrastructure
 
 When agent-rule enforcement or AI review is requested, put each rule at the
-lowest layer that can express it faithfully. Prefer compiler and linter checks
+strongest layer that can express it faithfully. Prefer compiler and linter checks
 over a new agent-rule system. Do not duplicate the same gate across layers.
 
 For an agent-specific rule that needs enforcement, use structural matching where

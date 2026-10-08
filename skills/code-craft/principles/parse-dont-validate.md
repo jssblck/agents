@@ -41,7 +41,9 @@ longer be called with bad input, so it does not need to re-check.
    skip the parser and still type-check, you are not done. Make the inner
    functions demand the strong type.
 5. **Keep failure at the boundary.** Processing code should not rediscover basic
-   shape errors after it has already acted.
+   shape errors after it has already acted. Value rules live here, not in
+   database `CHECK` expressions; see
+   [database-craft](../../database-craft/SKILL.md).
 6. **For checked-in assets / literals**, construct the strong form at startup or
    compile time, not by sprinkling parse-and-unwrap through runtime paths.
 

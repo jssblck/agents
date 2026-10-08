@@ -8,10 +8,11 @@
 Draw the line clearly:
 
 - **Expected/recoverable** (file missing, bad input, network hiccup, conflict):
-  flows through the value channel. Rust `Result`, Go `error` return, TS a
-  returned union or a thrown typed error caught at a known seam, Python a
-  specific exception. The caller can see it in the signature or contract and
-  decide what to do.
+  flows through the value channel. Rust `Result`, Go `error` return, TS the
+  typed error channel of an Effect (outside Effect, a returned union or a thrown
+  typed error caught at a known seam), Python a specific exception. The caller
+  can see it in the signature or contract and decide what to do; see
+  [effects](effects.md).
 - **Bugs/invariants violated** (index out of bounds on data you just built, a
   "this cannot happen" branch): may panic/throw/abort. These are programmer
   errors, not conditions to recover from. Use the language's assert/expect/panic
