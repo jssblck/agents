@@ -61,6 +61,10 @@ No row back means not found or not permitted; the caller maps it to one error.
 Use `INSERT ... ON CONFLICT` for idempotent writes, and let a unique index decide
 which concurrent writer wins.
 
+An action that must also update a derived value or enqueue a job may run as a
+short transaction of such statements; see [No triggers](#no-triggers) and
+[No reconciliation queues](#no-reconciliation-queues).
+
 ## Use locks; do not manage them
 
 Locking is how a relational database works, and designing around it is
@@ -92,8 +96,9 @@ WHERE tasks.id = next.id
 RETURNING tasks.*;
 ```
 
-Do not use `SERIALIZABLE` transactions. Single-statement actions and the staging
-pattern below remove the need. Ordinary transactions are fine.
+Do not introduce `SERIALIZABLE` transactions. Single-statement actions and the
+staging pattern below remove the need. Ordinary transactions are fine. An existing
+one stays until a restructuring protects what it protected.
 
 ### Removing a serializable transaction or a manual lock
 
@@ -107,9 +112,10 @@ committed state.
 A `WHERE` clause protects facts about the rows its statement writes. A fact about
 other rows does not survive concurrency: two on-call doctors can each leave
 because each saw the other still on call. Hold such an invariant in a constraint,
-or make every writer update one row that represents it, such as the shift. If
-no restructuring protects the invariant, keep the existing protection and ask
-the owner.
+or keep its data on one row and change it with a conditional update, such as
+`UPDATE shifts SET on_call = on_call - 1 WHERE id = $1 AND on_call > 1`. If no
+restructuring protects the invariant, keep the existing protection and ask the
+owner.
 
 List what the old code guaranteed and keep what a user would notice. A guarantee
 the isolation level happened to provide is not a requirement by default; ask the
@@ -157,15 +163,17 @@ path that changes the input, in the same transaction, through one shared
 function per derived value. Every writer reaches that function, so none can
 forget it, and the value commits or rolls back with its input.
 
-Joint commit does not make the value fresh. Compute it in the statement that
-writes it, from what that statement sees, such as
-`last_activity_at = GREATEST(last_activity_at, $1)`, never from a value read
-earlier, so two concurrent writers cannot leave the older value last. Writing
-the input, its derived value, and a job in one short transaction is fine; keep
-that work small on rows many writers share.
+Joint commit does not make the value fresh. Write it with an update that is
+correct in any order, using only the row's own columns: a monotonic expression
+such as `last_activity_at = GREATEST(last_activity_at, $1)` or arithmetic such as
+`reply_count = reply_count + 1`. A value recomputed from other rows, such as a
+count of children, can be computed from a snapshot that misses a concurrent
+writer's rows; recompute it in a job keyed by the record instead (see below).
+Writing the input, its derived value, and a job in one short transaction is
+fine; keep that work small on rows many writers share.
 
-Work that is slow, calls a provider, or spans many rows becomes a job instead
-(see below). Without a database-backed queue, the job polls for its condition,
+Work that is slow, calls a provider, reads other rows, or spans many rows
+becomes a job instead (see below). Without a database-backed queue, the job polls for its condition,
 optionally woken by `LISTEN`/`NOTIFY`. Send `pg_notify` in the transaction that
 writes the row, so it is delivered only on commit. A notification is lost when
 nobody is listening, so it is a wake-up hint; the poll guarantees the work.
@@ -184,10 +192,14 @@ record it acts on, so repeated writes collapse into one pending job.
 - Deduplicate against pending jobs only. A write that commits while a job for the
   same record is running must still get a run after it; check what the queue's
   uniqueness rule covers, since some include running or completed jobs.
-- Jobs run at least once. The handler reads current state when it runs, makes
-  repeated execution safe (idempotent writes, a provider idempotency key, or a
-  stored completion marker for external effects), and does not let a late run
-  overwrite newer output.
+- Jobs run at least once. The handler reads current state when it runs and makes
+  repeated execution safe. A database effect is idempotent, or commits together
+  with a completion marker. An external effect needs a provider idempotency key
+  or an operation id the handler can look up before trying again; without one,
+  record that the outcome is unknown instead of repeating the effect.
+- A late run must not overwrite newer output: publish the result only while the
+  input it read is still current, for example by matching the input's version or
+  `updated_at` in the publishing statement.
 
 Derive pending work from state for a backfill, for work whose job was lost or
 exhausted its retries, and as the primary mechanism when the queue lives outside
@@ -205,8 +217,9 @@ LIMIT 100;
 ```
 
 - Index the "missing" condition so the scan stays cheap.
-- End the work in an idempotent upsert, so overlapping runs are harmless. Claim
-  rows with `SKIP LOCKED` only when duplicate work is expensive.
+- End the work in an upsert that holds only while the input it read is still
+  current, so an overlapping or late run cannot replace newer output. Claim rows
+  with `SKIP LOCKED` only when duplicate work is expensive.
 - Record a failed attempt on the row, as `thumbnail_attempted_at` does above, so
   a row that always fails cannot hold the front of the window.
 
@@ -215,7 +228,9 @@ LIMIT 100;
 A proof parameter is evidence that a check passed at one moment; see code-craft's
 [proof parameters](../code-craft/principles/proof-parameters.md). The statement
 that acts re-asserts the fact in its own `WHERE` or CTE, or a constraint holds
-it. These are two invariants with two owners: the proof owns "this code path ran
+it. A `WHERE` clause holds only facts about the rows its statement writes; see
+[Removing a serializable transaction or a manual lock](#removing-a-serializable-transaction-or-a-manual-lock)
+for facts about other rows. These are two invariants with two owners: the proof owns "this code path ran
 the check", and the statement or constraint owns "the write happened only while
 the fact held".
 
@@ -224,6 +239,7 @@ the fact held".
 - Prove queries, constraints, jobs, and migrations against real Postgres; see
   [testing-craft](../testing-craft/SKILL.md). Test a constraint with the write it
   must refuse. Never fake the database to test SQL.
-- Where the project has a migration or SQL policy check, put these bans in it:
+- Where the project has a migration or SQL policy check, have it refuse new
   `CHECK` expressions, `CREATE TRIGGER`, `LOCK TABLE`, advisory locks, and
-  `SERIALIZABLE`. A check that fails the gate outranks review.
+  `SERIALIZABLE`, and inventory the existing locks and serializable requests in a
+  list that only shrinks. A check that fails the gate outranks review.
