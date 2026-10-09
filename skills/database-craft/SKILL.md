@@ -104,6 +104,13 @@ exclusion, and foreign key constraints, `INSERT ... ON CONFLICT`, a conditional
 job enqueued in the writer's transaction for follow-up work that must see the
 committed state.
 
+A `WHERE` clause protects facts about the rows its statement writes. A fact about
+other rows does not survive concurrency: two on-call doctors can each leave
+because each saw the other still on call. Hold such an invariant in a constraint,
+or make every writer update one row that represents it, such as the shift. If
+no restructuring protects the invariant, keep the existing protection and ask
+the owner.
+
 List what the old code guaranteed and keep what a user would notice. A guarantee
 the isolation level happened to provide is not a requirement by default; ask the
 owner before dropping or changing a user-visible one.
@@ -150,6 +157,13 @@ path that changes the input, in the same transaction, through one shared
 function per derived value. Every writer reaches that function, so none can
 forget it, and the value commits or rolls back with its input.
 
+Joint commit does not make the value fresh. Compute it in the statement that
+writes it, from what that statement sees, such as
+`last_activity_at = GREATEST(last_activity_at, $1)`, never from a value read
+earlier, so two concurrent writers cannot leave the older value last. Writing
+the input, its derived value, and a job in one short transaction is fine; keep
+that work small on rows many writers share.
+
 Work that is slow, calls a provider, or spans many rows becomes a job instead
 (see below). Without a database-backed queue, the job polls for its condition,
 optionally woken by `LISTEN`/`NOTIFY`. Send `pg_notify` in the transaction that
@@ -162,17 +176,24 @@ Do not track pending work in a work, inbox, or outbox table. Either enqueue the
 work with the write that creates it, or derive it from state.
 
 When the job queue lives in the same Postgres database (pg-boss, graphile-worker,
-River), enqueue the follow-up in the transaction that creates the rows the job
-reads, so the job and its rows commit or roll back together. Enqueue ids, not
-rows, and key each job by the record it acts on, so repeated writes collapse into
-one pending job. The handler reads current state when it runs, so a duplicate or
-late job is harmless.
+River), enqueue the follow-up through the writer's transaction connection, in
+the transaction that creates the rows the job reads, so the job and its rows
+commit or roll back together. Enqueue ids, not rows, and key each job by the
+record it acts on, so repeated writes collapse into one pending job.
+
+- Deduplicate against pending jobs only. A write that commits while a job for the
+  same record is running must still get a run after it; check what the queue's
+  uniqueness rule covers, since some include running or completed jobs.
+- Jobs run at least once. The handler reads current state when it runs, makes
+  repeated execution safe (idempotent writes, a provider idempotency key, or a
+  stored completion marker for external effects), and does not let a late run
+  overwrite newer output.
 
 Derive pending work from state for a backfill, for work whose job was lost or
 exhausted its retries, and as the primary mechanism when the queue lives outside
-the database. A periodic job selects the oldest rows that lack the derived state,
-does the work, upserts the result, and exits; the same query serves the backfill
-and the steady state.
+the database. A periodic job selects the oldest rows whose derived state is
+missing or older than its input, does the work, upserts the result, and exits;
+the same query serves the backfill and the steady state.
 
 ```sql
 SELECT m.id, m.storage_key
