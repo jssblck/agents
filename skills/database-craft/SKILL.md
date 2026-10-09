@@ -214,12 +214,12 @@ the same query serves the backfill and the steady state.
 SELECT m.id, m.storage_key
 FROM media m
 LEFT JOIN thumbnails t ON t.media_id = m.id
-WHERE t.media_id IS NULL
+WHERE t.media_id IS NULL OR t.source_version < m.version
 ORDER BY m.thumbnail_attempted_at NULLS FIRST, m.created_at
 LIMIT 100;
 ```
 
-- Index the "missing" condition so the scan stays cheap.
+- Index the "missing or outdated" condition so the scan stays cheap.
 - End the work in the same version-guarded upsert, so an overlapping or late run
   cannot replace newer output. Claim rows with `SKIP LOCKED` only when duplicate
   work is expensive.
