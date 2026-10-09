@@ -109,11 +109,11 @@ gh pr merge <n> <verified-method-flag> --delete-branch --match-head-commit <sha>
 A merge queue queues the PR and picks its own method; wait until it lands
 before starting the next PR.
 
-If a teammate pushes to a work-set branch, inspect and preserve their changes,
-coordinate when possible, and verify the new head. Ask only if ownership or
-the intended resolution is unclear. A closed PR is no longer mergeable: report
-it and continue with independent PRs. If someone merges a work-set PR, continue
-with the remaining PRs.
+If a teammate pushes to a work-set branch, inspect and preserve their changes
+and verify the new head. Ask only if ownership or the intended resolution is
+unclear. A closed PR is no longer mergeable: report it and continue with
+independent PRs. If someone merges a work-set PR, continue with the remaining
+PRs.
 
 `--admin` only with explicit approval, disclosed in the report.
 
