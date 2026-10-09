@@ -8,8 +8,8 @@ argument-hint: "[target]"
 # Database craft
 
 The database holds state; the application holds logic. Postgres enforces
-structure, each action runs as one statement whose own locks make it atomic, and
-jobs derive everything else by construction.
+structure, each action runs as one statement whose own locks make it atomic, a
+derived value is written with its input, and jobs do the rest.
 
 These rules assume Postgres. Follow the project's database policy where it is
 stricter, and its migration tooling for schema changes. Ask before introducing a
@@ -95,6 +95,29 @@ RETURNING tasks.*;
 Do not use `SERIALIZABLE` transactions. Single-statement actions and the staging
 pattern below remove the need. Ordinary transactions are fine.
 
+### Removing a serializable transaction or a manual lock
+
+Restructure the write; do not fence it. Each action becomes one statement whose
+`WHERE` clause or a constraint re-asserts the facts it depends on, using unique,
+exclusion, and foreign key constraints, `INSERT ... ON CONFLICT`, a conditional
+`UPDATE ... WHERE ... RETURNING`, compare-and-set on the row being changed, or a
+job enqueued in the writer's transaction for follow-up work that must see the
+committed state.
+
+List what the old code guaranteed and keep what a user would notice. A guarantee
+the isolation level happened to provide is not a requirement by default; ask the
+owner before dropping or changing a user-visible one.
+
+Do not rebuild serializability by hand. Without the owner's approval, add none
+of: revision counters on rows other than the one being written, commit hooks that
+bump or validate, capture-then-validate guards, replay or deadlock retry loops
+(let the job queue retry, or return a retryable error), one-row-per-parent side
+tables, or deploy and drain orderings.
+
+Removing the isolation option alone is not a fix. Check the outer transaction
+and nested callers, keep savepoint rollback and cancellation working, and keep
+network and model calls outside transaction bodies.
+
 ## Multi-step operations
 
 Upsert directly into the canonical table when a partial result is safe to
@@ -121,17 +144,35 @@ job drops prefixed tables older than the longest operation.
 
 ## No triggers
 
-Do not put logic in the database. Work a trigger would do becomes a job that
-polls for its condition, optionally woken by `LISTEN`/`NOTIFY`. Send
-`pg_notify` in the transaction that writes the row, so it is delivered only on
-commit. A notification is lost when nobody is listening, so it is a wake-up
-hint; the poll guarantees the work.
+Do not put logic in the database. A derived value that must stay current with
+its input, such as a last-activity time or a cached flag, is written by the code
+path that changes the input, in the same transaction, through one shared
+function per derived value. Every writer reaches that function, so none can
+forget it, and the value commits or rolls back with its input.
+
+Work that is slow, calls a provider, or spans many rows becomes a job instead
+(see below). Without a database-backed queue, the job polls for its condition,
+optionally woken by `LISTEN`/`NOTIFY`. Send `pg_notify` in the transaction that
+writes the row, so it is delivered only on commit. A notification is lost when
+nobody is listening, so it is a wake-up hint; the poll guarantees the work.
 
 ## No reconciliation queues
 
-Derive pending work from state instead of tracking it. A periodic job selects
-the oldest rows that lack the derived state, does the work, upserts the result,
-and exits. The same job performs the backfill and the steady-state work.
+Do not track pending work in a work, inbox, or outbox table. Either enqueue the
+work with the write that creates it, or derive it from state.
+
+When the job queue lives in the same Postgres database (pg-boss, graphile-worker,
+River), enqueue the follow-up in the transaction that creates the rows the job
+reads, so the job and its rows commit or roll back together. Enqueue ids, not
+rows, and key each job by the record it acts on, so repeated writes collapse into
+one pending job. The handler reads current state when it runs, so a duplicate or
+late job is harmless.
+
+Derive pending work from state for a backfill, for work whose job was lost or
+exhausted its retries, and as the primary mechanism when the queue lives outside
+the database. A periodic job selects the oldest rows that lack the derived state,
+does the work, upserts the result, and exits; the same query serves the backfill
+and the steady state.
 
 ```sql
 SELECT m.id, m.storage_key
