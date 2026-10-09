@@ -197,9 +197,12 @@ record it acts on, so repeated writes collapse into one pending job.
   with a completion marker. An external effect needs a provider idempotency key
   or an operation id the handler can look up before trying again; without one,
   record that the outcome is unknown instead of repeating the effect.
-- A late run must not overwrite newer output: publish the result only while the
-  input it read is still current, for example by matching the input's version or
-  `updated_at` in the publishing statement.
+- A late run must not overwrite newer output. Every input writer advances a
+  version in its own transaction; the output row stores the input version it was
+  computed from, and the publishing upsert writes only a newer one
+  (`ON CONFLICT ... DO UPDATE ... WHERE outputs.source_version < excluded.source_version`).
+  Checking the input row's version from the publishing statement is not enough,
+  since that row is not the one being written.
 
 Derive pending work from state for a backfill, for work whose job was lost or
 exhausted its retries, and as the primary mechanism when the queue lives outside
@@ -217,9 +220,9 @@ LIMIT 100;
 ```
 
 - Index the "missing" condition so the scan stays cheap.
-- End the work in an upsert that holds only while the input it read is still
-  current, so an overlapping or late run cannot replace newer output. Claim rows
-  with `SKIP LOCKED` only when duplicate work is expensive.
+- End the work in the same version-guarded upsert, so an overlapping or late run
+  cannot replace newer output. Claim rows with `SKIP LOCKED` only when duplicate
+  work is expensive.
 - Record a failed attempt on the row, as `thumbnail_attempted_at` does above, so
   a row that always fails cannot hold the front of the window.
 
