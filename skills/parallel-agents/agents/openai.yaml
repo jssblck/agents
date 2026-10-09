@@ -1,4 +1,0 @@
-interface:
-  display_name: "Parallel Agents"
-  short_description: "For concurrent agent work, merge hotspots, or agent docs"
-  default_prompt: "Use $parallel-agents to keep this change from colliding with parallel work."
