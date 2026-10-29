@@ -32,17 +32,18 @@ Each file holds a comment with the public key (`age1...`) and the private key
   vault, item, and field; vault names differ between accounts. Read it with `op read
   'op://VAULT/age-personal/private key' --account ACCOUNT`, substituting those recorded
   identifiers. Delete the local file.
-- `agent.txt`: keep for step 3, then store a copy in the password manager as
-  `age-agent` for future machines. Delete the local file after step 3.
+- `agent.txt`: keep for step 3, then store a copy in the password manager as `age-agent`
+  for future machines, with the private key in a field named `private key`. Record its
+  account and vault as for `age-personal`. Delete the local file after step 3.
 
 Record both public keys somewhere handy (a note in the password manager works). Every new
 project's `.sops.yaml` needs them. The `prod` key is per project and is generated in step 6.
 
 ## 3. Install the agent key on a machine
 
-sops reads its user key file from `$XDG_CONFIG_HOME/sops/age` when that variable is set, and
-otherwise from the platform's config directory: `~/Library/Application Support` on macOS,
-`~/.config` on Linux.
+sops reads its user key file from `$XDG_CONFIG_HOME/sops/age` when that variable is set and
+not empty, and otherwise from the platform's config directory: `~/Library/Application
+Support` on macOS, `~/.config` on Linux.
 
 ```sh
 if [ -n "${XDG_CONFIG_HOME:-}" ]; then
