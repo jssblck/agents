@@ -4,10 +4,12 @@ Verified against sops 3.13.3 and age 1.3.1 in August 2026.
 
 ## Identity sources are unioned
 
-sops tries every age identity it can find: `~/.config/sops/age/keys.txt` (or
-`$XDG_CONFIG_HOME/sops/age/keys.txt`), the `SOPS_AGE_KEY` variable (one or more
-identities, newline separated), `SOPS_AGE_KEY_FILE`, and `SOPS_AGE_KEY_CMD` output. None
-replaces the others. That is why `.age/elevated` passed as `SOPS_AGE_KEY_FILE` adds prod
+sops tries every age identity it can find: the user key file, the `SOPS_AGE_KEY` variable
+(one or more identities, newline separated), `SOPS_AGE_KEY_FILE`, and `SOPS_AGE_KEY_CMD`
+output. None replaces the others. The user key file is `$XDG_CONFIG_HOME/sops/age/keys.txt`
+when that variable is set, on every platform. Otherwise it is in the platform's config
+directory: `~/Library/Application Support/sops/age/keys.txt` on macOS, never `~/.config`
+there, and `~/.config/sops/age/keys.txt` on Linux. That is why `.age/elevated` passed as `SOPS_AGE_KEY_FILE` adds prod
 without removing dev.
 
 ## Encrypt needs no private key; every write re-encrypts the whole file

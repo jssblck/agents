@@ -18,7 +18,7 @@ repo that has the wrapper.
 
 | Identity   | Scope       | Where the private key lives                                       | Decrypts    |
 | ---------- | ----------- | ---------------------------------------------------------------- | ----------- |
-| `agent`    | user-wide   | `~/.config/sops/age/keys.txt` on every machine agents run on; `SOPS_AGE_KEY` in cloud sandboxes | `dev.env` |
+| `agent`    | user-wide   | sops's user key file on every machine agents run on (`references/setup.md` step 3 has its path); `SOPS_AGE_KEY` in cloud sandboxes | `dev.env` |
 | `personal` | user-wide   | the user's password manager                                      | files listing its public key |
 | `prod`     | per project | that project's production platform and documented password-manager item | `prod.env` |
 

@@ -40,17 +40,32 @@ project's `.sops.yaml` needs them. The `prod` key is per project and is generate
 
 ## 3. Install the agent key on a machine
 
+sops reads its user key file from `$XDG_CONFIG_HOME/sops/age` when that variable is set, and
+otherwise from the platform's config directory: `~/Library/Application Support` on macOS,
+`~/.config` on Linux.
+
 ```sh
-mkdir -p ~/.config/sops/age
-# paste the AGE-SECRET-KEY-1... line from age-agent
-install -m 600 /dev/stdin ~/.config/sops/age/keys.txt <<'EOF'
-AGE-SECRET-KEY-1...
-EOF
+if [ -n "${XDG_CONFIG_HOME:-}" ]; then
+  age_dir="$XDG_CONFIG_HOME/sops/age"
+elif [ "$(uname -s)" = Darwin ]; then
+  age_dir="$HOME/Library/Application Support/sops/age"
+else
+  age_dir="$HOME/.config/sops/age"
+fi
+mkdir -p "$age_dir"
+# Right after step 2, from the file it wrote:
+install -m 600 agent.txt "$age_dir/keys.txt"
+# On a later machine, from the password manager, at the location recorded in step 2:
+op read --account ACCOUNT --out-file "$age_dir/keys.txt" --file-mode 0600 'op://VAULT/age-agent/private key'
 ```
 
-sops reads that path by default. Any agent session on this machine, in any project,
-worktree, or shell (including editors like t3code that spawn their own shells), can now
-`pnpm secrets show dev`. Nothing prompts.
+Write the key file from a regular file or with `op read --out-file`, never through a pipe:
+macOS's `install` refuses `/dev/stdin` when it is a pipe ("Inappropriate file type or
+format"), as it is under `op read ... |` and bash's heredocs. `op read` asks before replacing a
+key file that exists.
+
+Any agent session on this machine, in any project, worktree, or shell (including editors like
+t3code that spawn their own shells), can now `pnpm secrets show dev`. Nothing prompts.
 
 ## 4. Cloud sandboxes
 
